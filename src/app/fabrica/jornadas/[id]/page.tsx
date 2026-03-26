@@ -1,0 +1,154 @@
+'use client';
+
+import { use } from 'react';
+import Link from 'next/link';
+import { useApp } from '@/lib/store';
+import { EstadoJornadaBadge } from '@/components/estado-badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { DESTINOS_LABELS } from '@/lib/constants';
+
+interface Props {
+  params: Promise<{ id: string }>;
+}
+
+export default function JornadaDetallePage({ params }: Props) {
+  const { id } = use(params);
+  const { getJornada, getVerificacionesByJornada, getDesmoldeByJornada, getProductoTerminadoByJornada, getNCByJornada, trabajadores } = useApp();
+
+  const jornada = getJornada(id);
+  if (!jornada) return <div className="text-center py-20 text-muted-foreground">Jornada no encontrada</div>;
+
+  const verificaciones = getVerificacionesByJornada(id);
+  const desmolde = getDesmoldeByJornada(id);
+  const productoTerminado = getProductoTerminadoByJornada(id);
+  const ncs = getNCByJornada(id);
+
+  const getStepStatus = (step: number) => {
+    const estados: Record<number, { done: boolean; locked: boolean }> = {
+      1: { done: true, locked: false },
+      2: { done: verificaciones.length > 0, locked: false },
+      3: { done: !!desmolde, locked: verificaciones.length === 0 },
+      4: { done: !!productoTerminado, locked: !desmolde },
+    };
+    return estados[step] || { done: false, locked: true };
+  };
+
+  const getWorkerNames = (ids: string[]) => ids.map(id => trabajadores.find(t => t.id === id)?.nombre || id).join(', ');
+
+  const steps = [
+    { num: 1, label: 'Jornada', desc: `${jornada.temperatura}°C | ${jornada.humedad_relativa}% HR | Cemento: ${jornada.lote_cemento}`, href: null },
+    { num: 2, label: 'Verificación', desc: verificaciones.length > 0 ? verificaciones.map(v => `${v.tipo_poste}: ${v.resultado === 'conforme' ? 'Conforme' : 'No conforme'}`).join(' | ') : '', href: `/fabrica/jornadas/${id}/verificacion` },
+    { num: 3, label: 'Desmolde', desc: desmolde ? `${desmolde.fecha} — ${desmolde.defectos_detectados ? 'Con defectos' : 'Sin defectos'}` : '', href: `/fabrica/jornadas/${id}/desmolde` },
+    { num: 4, label: 'Producto terminado', desc: productoTerminado ? `${productoTerminado.fecha} — ${productoTerminado.resultado === 'conforme' ? 'Conforme' : 'No conforme'}` : '', href: `/fabrica/jornadas/${id}/terminado` },
+  ];
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold">Jornada {jornada.codigo}</h1>
+            <EstadoJornadaBadge estado={jornada.estado} />
+          </div>
+          <p className="text-muted-foreground text-sm mt-1">
+            {jornada.fecha} | Destino: {DESTINOS_LABELS[jornada.destino]} | Tipos: {jornada.tipos_poste.join(', ')}
+          </p>
+        </div>
+        <Link href="/fabrica/jornadas"><Button variant="outline" size="sm">← Volver</Button></Link>
+      </div>
+
+      {/* Steps */}
+      <div className="space-y-3">
+        {steps.map(step => {
+          const status = getStepStatus(step.num);
+          return (
+            <Card key={step.num} className={`bg-card/50 border-border/50 ${status.locked ? 'opacity-50' : ''}`}>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center text-base font-bold" style={{
+                      background: status.done ? 'var(--status-green)' : status.locked ? 'var(--muted)' : 'var(--status-blue)',
+                      color: '#fff',
+                      opacity: status.locked ? 0.5 : 1,
+                    }}>
+                      {status.done ? '✓' : status.locked ? '🔒' : step.num}
+                    </div>
+                    <div>
+                      <div className="font-medium">Etapa {step.num}: {step.label}</div>
+                      {step.desc && <div className="text-xs text-muted-foreground mt-0.5">{step.desc}</div>}
+                    </div>
+                  </div>
+                  {step.href && !status.locked && (
+                    <Link href={step.href}>
+                      <Button size="sm" variant={status.done ? 'outline' : 'default'}>
+                        {status.done ? 'Ver' : 'Registrar'}
+                      </Button>
+                    </Link>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      <Separator />
+
+      {/* Datos de jornada */}
+      <Card className="bg-card/50 border-border/50">
+        <CardHeader><CardTitle className="text-base">Datos de la Jornada</CardTitle></CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div><span className="text-muted-foreground">Temperatura:</span> <span className="font-medium">{jornada.temperatura}°C</span></div>
+            <div><span className="text-muted-foreground">Humedad:</span> <span className="font-medium">{jornada.humedad_relativa}%</span></div>
+            <div><span className="text-muted-foreground">Cemento:</span> <span className="font-medium">{jornada.lote_cemento}</span></div>
+            <div><span className="text-muted-foreground">Áridos:</span> <span className="font-medium">{jornada.partida_aridos}</span></div>
+            <div><span className="text-muted-foreground">Acero:</span> <span className="font-medium">{jornada.lote_acero}</span></div>
+            <div><span className="text-muted-foreground">Cono Abrams:</span> <span className="font-medium">{jornada.cono_abrams_mm} mm</span></div>
+            <div><span className="text-muted-foreground">Enfierradura:</span> <span className="font-medium">{getWorkerNames(jornada.operadores_enfierradura)}</span></div>
+            <div><span className="text-muted-foreground">Moldaje:</span> <span className="font-medium">{getWorkerNames(jornada.operadores_moldaje)}</span></div>
+            <div><span className="text-muted-foreground">Hormigonado:</span> <span className="font-medium">{getWorkerNames(jornada.operadores_hormigonado)}</span></div>
+            <div><span className="text-muted-foreground">Curado:</span> <span className="font-medium">{getWorkerNames(jornada.operadores_curado)}</span></div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* NCs vinculadas */}
+      {ncs.length > 0 && (
+        <Card className="bg-card/50 border-status-red/20">
+          <CardHeader><CardTitle className="text-base">No Conformidades ({ncs.length})</CardTitle></CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {ncs.map(nc => (
+                <div key={nc.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/20">
+                  <div>
+                    <span className="font-mono text-xs">{nc.numero}</span>
+                    <span className="text-xs text-muted-foreground ml-2">{nc.tipo_defecto.replace(/_/g, ' ')}</span>
+                  </div>
+                  <span className={`text-xs px-2 py-0.5 rounded ${nc.estado === 'abierta' ? 'bg-status-red/15 text-status-red' : 'bg-status-green/15 text-status-green'}`}>
+                    {nc.estado}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Alertas */}
+      {jornada.alertas && jornada.alertas.length > 0 && (
+        <Card className="bg-status-yellow/5 border-status-yellow/20">
+          <CardContent className="p-4">
+            <h3 className="text-sm font-medium text-status-yellow mb-2">⚠️ Alertas</h3>
+            {jornada.alertas.map((alerta, i) => (
+              <p key={i} className="text-xs text-status-yellow/80">{alerta}</p>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
