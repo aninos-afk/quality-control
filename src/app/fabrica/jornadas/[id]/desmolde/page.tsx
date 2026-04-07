@@ -20,7 +20,7 @@ export default function DesmoldePage({ params }: Props) {
   const { id } = use(params);
   const router = useRouter();
   const { user, planta } = useAuth();
-  const { getJornada, getNCByPlanta, addDesmolde, addNC, updateJornada } = useApp();
+  const { getJornada, addDesmolde, updateJornada } = useApp();
   const jornada = getJornada(id);
 
   const [fecha, setFecha] = useState(format(new Date(), 'yyyy-MM-dd'));
@@ -41,30 +41,9 @@ export default function DesmoldePage({ params }: Props) {
       created_by: user?.id,
     });
 
-    // Auto-crear NC si se detectaron defectos
-    if (defectos) {
-      const plantaId = planta?.id || jornada?.planta_id || '';
-      const ncsExistentes = getNCByPlanta(plantaId);
-      const año = new Date().getFullYear();
-      const siguiente = ncsExistentes.filter(nc => nc.numero.includes(`${año}`)).length + 1;
-      const codigoPlanta = planta?.codigo || 'PLT';
-      const numero = `${codigoPlanta}-${año}-${String(siguiente).padStart(3, '0')}`;
-
-      addNC({
-        id: `nc-auto-des-${Date.now()}`,
-        planta_id: plantaId,
-        numero,
-        nivel: 'producto',
-        jornada_id: id,
-        fecha_deteccion: fecha,
-        origen: 'desmolde',
-        tipo_defecto: 'despunte_desprendimiento',
-        detalle: observaciones || 'Defectos visuales detectados durante desmolde',
-        accion_inmediata: 'Segregación del elemento para revisión',
-        estado: 'abierta',
-        created_by: user?.id,
-      });
-    }
+    // Nota: los defectos detectados en desmolde se corrigen en el acto.
+    // Solo se registra la observación. Si amerita NC formal, el Jefe de Planta
+    // o Encargado de Calidad la crea manualmente desde la revisión de producto terminado.
 
     updateJornada(id, { estado: 'desmolde_registrado' });
     router.push(`/fabrica/jornadas/${id}`);
@@ -111,12 +90,12 @@ export default function DesmoldePage({ params }: Props) {
           </div>
 
           {defectos && (
-            <div className="p-4 rounded-xl border border-status-red/20 bg-status-red/5 space-y-3">
-              <p className="text-sm font-medium text-status-red">Registrar defectos detectados</p>
+            <div className="p-4 rounded-xl border border-status-yellow/20 bg-status-yellow/5 space-y-3">
+              <p className="text-sm font-medium text-status-yellow">Registrar corrección realizada</p>
               <p className="text-xs text-muted-foreground">
-                ⚠️ Se creará automáticamente una No Conformidad vinculada a esta jornada.
+                📝 Describa el defecto detectado y la corrección aplicada. Esta observación quedará registrada en la trazabilidad de la jornada.
               </p>
-              <Textarea placeholder="Describa los defectos detectados..." value={observaciones} onChange={e => setObservaciones(e.target.value)} />
+              <Textarea placeholder="Ej: Despunte menor en base, se realizó limpieza manual..." value={observaciones} onChange={e => setObservaciones(e.target.value)} />
             </div>
           )}
 
