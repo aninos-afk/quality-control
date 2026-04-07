@@ -16,10 +16,11 @@ type ViewMode = 'calendario' | 'lista';
 
 export default function JornadasPage() {
   const router = useRouter();
-  const { planta } = useAuth();
-  const { getJornadasByPlanta } = useApp();
+  const { planta, can } = useAuth();
+  const { getJornadasByPlanta, updateJornada } = useApp();
   const jornadas = getJornadasByPlanta(planta?.id || '').sort((a, b) => b.fecha.localeCompare(a.fecha));
   const [view, setView] = useState<ViewMode>('calendario');
+  const canToggleVis = can('toggle_visible_externo');
 
   return (
     <div className="space-y-6">
@@ -60,6 +61,8 @@ export default function JornadasPage() {
         <JornadaCalendar
           jornadas={jornadas}
           onDayClick={(jornada) => router.push(`/fabrica/jornadas/${jornada.id}`)}
+          canToggleVisibility={canToggleVis}
+          onToggleVisibility={(id, nuevoEstado) => updateJornada(id, { visible_externo: nuevoEstado })}
         />
       ) : (
         <div className="space-y-3">

@@ -8,6 +8,8 @@ import { ESTADOS_JORNADA_LABELS } from '@/lib/constants';
 interface JornadaCalendarProps {
   jornadas: Jornada[];
   onDayClick?: (jornada: Jornada) => void;
+  canToggleVisibility?: boolean;
+  onToggleVisibility?: (jornadaId: string, nuevoEstado: boolean) => void;
 }
 
 const DIAS_SEMANA = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
@@ -33,7 +35,7 @@ function getMonday(date: Date): Date {
   return d;
 }
 
-export function JornadaCalendar({ jornadas, onDayClick }: JornadaCalendarProps) {
+export function JornadaCalendar({ jornadas, onDayClick, canToggleVisibility, onToggleVisibility }: JornadaCalendarProps) {
   const [year, setYear] = useState(new Date().getFullYear());
   const [month, setMonth] = useState(new Date().getMonth());
 
@@ -134,16 +136,43 @@ export function JornadaCalendar({ jornadas, onDayClick }: JornadaCalendarProps) 
                 {/* Jornada indicator */}
                 {jornada && day.inMonth && colors && (
                   <div className={cn('rounded-md px-1.5 py-1 border', colors.bg, colors.border)}>
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1">
                       <span className={cn('w-2 h-2 rounded-full shrink-0', colors.dot)} />
-                      <span className="text-[10px] font-medium truncate">{jornada.codigo}</span>
+                      <span className="text-[10px] font-medium truncate flex-1">{jornada.codigo}</span>
+                      {/* Visibility icon for cerrada jornadas */}
+                      {jornada.estado === 'cerrada' && canToggleVisibility && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onToggleVisibility?.(jornada.id, !jornada.visible_externo);
+                          }}
+                          className={cn(
+                            'shrink-0 w-4 h-4 flex items-center justify-center rounded transition-all text-[9px] leading-none',
+                            jornada.visible_externo
+                              ? 'text-status-blue hover:text-status-blue/70'
+                              : 'text-muted-foreground/50 hover:text-foreground/70'
+                          )}
+                          title={jornada.visible_externo ? 'Visible al auditor — click para ocultar' : 'Solo interno — click para publicar'}
+                        >
+                          {jornada.visible_externo ? '👁️' : '🔒'}
+                        </button>
+                      )}
+                      {/* Read-only icon when user can't toggle */}
+                      {jornada.estado === 'cerrada' && !canToggleVisibility && (
+                        <span className={cn(
+                          'shrink-0 text-[9px] leading-none',
+                          jornada.visible_externo ? 'text-status-blue' : 'text-muted-foreground/40'
+                        )}>
+                          {jornada.visible_externo ? '👁️' : '🔒'}
+                        </span>
+                      )}
                     </div>
                   </div>
                 )}
 
                 {/* Tooltip on hover */}
                 {hoveredDay === dateStr && jornada && day.inMonth && (
-                  <div className="absolute z-50 left-1/2 -translate-x-1/2 top-full mt-1 w-48 p-3 rounded-lg bg-popover border border-border/50 shadow-xl text-xs space-y-1.5 pointer-events-none">
+                  <div className="absolute z-50 left-1/2 -translate-x-1/2 top-full mt-1 w-52 p-3 rounded-lg bg-popover border border-border/50 shadow-xl text-xs space-y-1.5 pointer-events-none">
                     <div className="font-semibold">{jornada.codigo}</div>
                     <div className="flex items-center gap-1.5">
                       <span className={cn('w-2 h-2 rounded-full', colors!.dot)} />
@@ -152,6 +181,15 @@ export function JornadaCalendar({ jornadas, onDayClick }: JornadaCalendarProps) 
                     <div className="text-muted-foreground">Destino: {jornada.destino}</div>
                     <div className="text-muted-foreground">Tipos: {jornada.tipos_poste.join(', ')}</div>
                     {jornada.temperatura && <div className="text-muted-foreground">{jornada.temperatura}°C · {jornada.humedad_relativa}% HR</div>}
+                    {jornada.estado === 'cerrada' && (
+                      <div className={cn(
+                        'flex items-center gap-1 pt-1 border-t border-border/30 mt-1',
+                        jornada.visible_externo ? 'text-status-blue' : 'text-muted-foreground'
+                      )}>
+                        <span>{jornada.visible_externo ? '👁️' : '🔒'}</span>
+                        <span>{jornada.visible_externo ? 'Visible al auditor externo' : 'Solo uso interno'}</span>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
