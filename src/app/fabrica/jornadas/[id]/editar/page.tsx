@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { use, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/lib/store';
 import { useAuth } from '@/lib/auth';
@@ -12,79 +12,90 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { MultiSelectDropdown } from '@/components/multi-select-dropdown';
 import { TIPOS_POSTE, MEDIDAS_PROTECCION, TIPOS_MATERIAL, RANGO_CONO_ABRAMS } from '@/lib/constants';
 import type { TipoPoste, DestinoProduccion, MedidaProteccion, TipoMaterial } from '@/lib/types';
-import { format } from 'date-fns';
 
-export default function NuevaJornadaPage() {
+interface Props {
+  params: Promise<{ id: string }>;
+}
+
+export default function EditarJornadaPage({ params }: Props) {
+  const { id } = use(params);
   const router = useRouter();
-  const { user, planta } = useAuth();
-  const { getTrabajadoresByPlanta, getMaterialesByPlanta, getCondicionesByPlanta, addJornada, getJornadasByPlanta } = useApp();
-  const trabajadores = getTrabajadoresByPlanta(planta?.id || '').filter(t => t.activo);
-  const materiales = getMaterialesByPlanta(planta?.id || '').filter(m => m.activo);
-  const condiciones = getCondicionesByPlanta(planta?.id || '');
-  const jornadas = getJornadasByPlanta(planta?.id || '');
+  const { user, can } = useAuth();
+  const { getJornada, updateJornada, getMaterialesByPlanta, getTrabajadoresByPlanta, getCondicionesByPlanta, addAuditLog } = useApp();
 
-  const hoy = format(new Date(), 'yyyy-MM-dd');
-  const codigoFecha = format(new Date(), 'yyMMdd');
-  const codigo = `${planta?.codigo || 'XXX'}-${codigoFecha}`;
+  const jornada = getJornada(id);
+  const canEdit = can('editar_jornada');
 
-  // --- Producción ---
+  const materiales = getMaterialesByPlanta(jornada?.planta_id || '').filter(m => m.activo);
+  const trabajadores = getTrabajadoresByPlanta(jornada?.planta_id || '').filter(t => t.activo);
+  const condiciones = getCondicionesByPlanta(jornada?.planta_id || '');
+
+  // Form state
   const [tiposPoste, setTiposPoste] = useState<TipoPoste[]>([]);
   const [destino, setDestino] = useState<DestinoProduccion>('SAESA');
-
-  // --- Condiciones ambientales ---
   const [temperatura, setTemperatura] = useState('');
   const [humedad, setHumedad] = useState('');
   const [medidas, setMedidas] = useState<MedidaProteccion[]>([]);
-
-  // --- Materiales (selección por ID) ---
   const [selectedMaterials, setSelectedMaterials] = useState<Record<TipoMaterial, string>>({
-    cemento: '',
-    aridos: '',
-    acero: '',
-    aditivo: '',
+    cemento: '', aridos: '', acero: '', aditivo: '',
   });
   const [cono, setCono] = useState('');
-
-  // --- Operadores ---
   const [opEnfierradura, setOpEnfierradura] = useState<string[]>([]);
   const [opMoldaje, setOpMoldaje] = useState<string[]>([]);
   const [opHormigonado, setOpHormigonado] = useState<string[]>([]);
   const [opCurado, setOpCurado] = useState<string[]>([]);
 
-  // Auto-select materials when there's only one active per type
+  // Populate from existing jornada
   useEffect(() => {
-    const autoSelect: Record<TipoMaterial, string> = { cemento: '', aridos: '', acero: '', aditivo: '' };
-    for (const tipo of ['cemento', 'aridos', 'acero', 'aditivo'] as TipoMaterial[]) {
-      const activos = materiales.filter(m => m.tipo === tipo);
-      if (activos.length === 1) {
-        autoSelect[tipo] = activos[0].id;
-      }
-    }
-    setSelectedMaterials(autoSelect);
+    if (!jornada) return;
+    setTiposPoste(jornada.tipos_poste || []);
+    setDestino(jornada.destino || 'SAESA');
+    setTemperatura(jornada.temperatura?.toString() || '');
+    setHumedad(jornada.humedad_relativa?.toString() || '');
+    setMedidas(jornada.medidas_proteccion || []);
+    setSelectedMaterials({
+      cemento: jornada.material_cemento_id || '',
+      aridos: jornada.material_aridos_id || '',
+      acero: jornada.material_acero_id || '',
+      aditivo: jornada.material_aditivo_id || '',
+    });
+    setCono(jornada.cono_abrams_mm?.toString() || '');
+    setOpEnfierradura(jornada.operadores_enfierradura || []);
+    setOpMoldaje(jornada.operadores_moldaje || []);
+    setOpHormigonado(jornada.operadores_hormigonado || []);
+    setOpCurado(jornada.operadores_curado || []);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const already = jornadas.find(j => j.fecha === hoy);
+  if (!jornada) {
+    return <div className="text-center py-20 text-muted-foreground">Jornada no encontrada</div>;
+  }
+
+  if (!canEdit) {
+    return <div className="text-center py-20 text-muted-foreground">No tiene permisos para editar esta jornada</div>;
+  }
+
+  if (jornada.estado === 'cerrada') {
+    return (
+      <div className="text-center py-20 space-y-4">
+        <p className="text-muted-foreground">Esta jornada está cerrada y no puede ser editada.</p>
+        <Button onClick={() => router.push(`/fabrica/jornadas/${id}`)}>← Volver a jornada</Button>
+      </div>
+    );
+  }
 
   const toggleTipo = (tipo: TipoPoste) => {
     setTiposPoste(prev => prev.includes(tipo) ? prev.filter(t => t !== tipo) : [...prev, tipo]);
   };
-
   const toggleMedida = (medida: MedidaProteccion) => {
     setMedidas(prev => prev.includes(medida) ? prev.filter(m => m !== medida) : [...prev, medida]);
   };
-
-  // Alertas
-  const temp = parseFloat(temperatura);
-  const alertaTemp = !isNaN(temp) && temp < 5 && !medidas.includes('aditivos') && !medidas.includes('agua_caliente');
-  const mes = new Date().getMonth() + 1;
-  const alertaEpoca = (mes >= 5 && mes <= 9) && !medidas.includes('mantas_termicas');
 
   // Cono validation
   const conoVal = parseInt(cono);
   const conoStatus = isNaN(conoVal) ? null : conoVal >= RANGO_CONO_ABRAMS.min && conoVal <= RANGO_CONO_ABRAMS.max ? 'ok' : 'warn';
 
-  // Certificate status for selected materials
+  // Certificate check
   const getCertificateStatus = (materialId: string) => {
     if (!materialId) return null;
     const mat = materiales.find(m => m.id === materialId);
@@ -93,11 +104,10 @@ export default function NuevaJornadaPage() {
     return cert?.estado || null;
   };
 
-  // Get selected material info
   const getSelectedMaterialInfo = (tipo: TipoMaterial) => {
-    const id = selectedMaterials[tipo];
-    if (!id) return null;
-    return materiales.find(m => m.id === id) || null;
+    const matId = selectedMaterials[tipo];
+    if (!matId) return null;
+    return materiales.find(m => m.id === matId) || null;
   };
 
   // Capacitación check
@@ -109,7 +119,6 @@ export default function NuevaJornadaPage() {
     return new Date(t.fecha_ultima_capacitacion) < sixMonthsAgo;
   };
 
-  // Build operator options for multi-select
   const getOperatorOptions = (actividad: string) => {
     return trabajadores
       .filter(t => t.actividades_habilitadas.includes(actividad))
@@ -121,30 +130,19 @@ export default function NuevaJornadaPage() {
   };
 
   const handleSave = () => {
-    const alertas: string[] = [];
-    if (alertaTemp) alertas.push('Temperatura < 5°C sin medidas de protección adecuadas.');
-    if (alertaEpoca) alertas.push('Período mayo-septiembre sin mantas térmicas.');
-
-    // Check for expired certifications on workers
-    const allOps = [...new Set([...opEnfierradura, ...opMoldaje, ...opHormigonado, ...opCurado])];
-    allOps.forEach(opId => {
-      if (isCapacitacionVencida(opId)) {
-        const t = trabajadores.find(tr => tr.id === opId);
-        alertas.push(`Operador ${t?.nombre || opId} tiene capacitación vencida.`);
-      }
-    });
-
-    // Resolve material codes for backward compatibility
     const matCemento = materiales.find(m => m.id === selectedMaterials.cemento);
     const matAridos = materiales.find(m => m.id === selectedMaterials.aridos);
     const matAcero = materiales.find(m => m.id === selectedMaterials.acero);
     const matAditivo = materiales.find(m => m.id === selectedMaterials.aditivo);
 
-    addJornada({
-      id: `jrn-new-${Date.now()}`,
-      planta_id: planta?.id || '',
-      fecha: hoy,
-      codigo,
+    // Build changes log
+    const changes: string[] = [];
+    if (destino !== jornada.destino) changes.push(`Destino: ${jornada.destino} → ${destino}`);
+    if (JSON.stringify(tiposPoste.sort()) !== JSON.stringify((jornada.tipos_poste || []).sort())) changes.push('Tipos de poste modificados');
+    if (selectedMaterials.cemento !== (jornada.material_cemento_id || '')) changes.push('Lote de cemento modificado');
+    if (selectedMaterials.acero !== (jornada.material_acero_id || '')) changes.push('Lote de acero modificado');
+
+    updateJornada(id, {
       tipos_poste: tiposPoste,
       destino,
       temperatura: parseFloat(temperatura) || undefined,
@@ -163,41 +161,33 @@ export default function NuevaJornadaPage() {
       operadores_moldaje: opMoldaje,
       operadores_hormigonado: opHormigonado,
       operadores_curado: opCurado,
-      estado: 'abierta',
-      alertas,
-      created_by: user?.id,
-      created_at: hoy,
     });
-    router.push('/fabrica/jornadas');
-  };
 
-  if (already) {
-    return (
-      <div className="text-center py-20 space-y-4">
-        <p className="text-muted-foreground">Ya existe una jornada para hoy ({already.codigo}).</p>
-        <Button onClick={() => router.push(`/fabrica/jornadas/${already.id}`)}>Ver jornada →</Button>
-      </div>
-    );
-  }
+    // Audit log
+    if (changes.length > 0) {
+      addAuditLog({
+        id: `audit-${Date.now()}`,
+        fecha: new Date().toISOString().slice(0, 10),
+        hora: new Date().toTimeString().slice(0, 5),
+        usuario_id: user?.id || '',
+        usuario_nombre: user?.nombre || '',
+        rol: user?.rol || 'jefe_planta',
+        accion: 'editar_jornada',
+        modulo: 'jornadas',
+        detalle: `Jornada ${jornada.codigo} editada: ${changes.join('; ')}`,
+        planta_id: jornada.planta_id,
+      });
+    }
+
+    router.push(`/fabrica/jornadas/${id}`);
+  };
 
   return (
     <div className="space-y-6 max-w-3xl">
       <div>
-        <h1 className="text-2xl font-bold">Nueva Jornada de Fabricación</h1>
-        <p className="text-muted-foreground text-sm mt-1">{planta?.nombre} — {hoy} — {codigo}</p>
+        <h1 className="text-2xl font-bold">✏️ Editar Jornada {jornada.codigo}</h1>
+        <p className="text-muted-foreground text-sm mt-1">{jornada.fecha} — Editando como {user?.nombre}</p>
       </div>
-
-      {/* Encabezado */}
-      <Card className="bg-card/50 border-border/50">
-        <CardHeader className="pb-2"><CardTitle className="text-base">Encabezado</CardTitle></CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-3 gap-4 text-sm">
-            <div><span className="text-muted-foreground">Planta:</span> <span className="font-medium">{planta?.codigo}</span></div>
-            <div><span className="text-muted-foreground">Fecha:</span> <span className="font-medium">{hoy}</span></div>
-            <div><span className="text-muted-foreground">Código:</span> <span className="font-mono font-medium">{codigo}</span></div>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Producción */}
       <Card className="bg-card/50 border-border/50">
@@ -250,91 +240,35 @@ export default function NuevaJornadaPage() {
               ))}
             </div>
           </div>
-          {alertaTemp && (
-            <div className="p-3 rounded-lg bg-status-yellow/10 border border-status-yellow/20 text-xs text-status-yellow">
-              ⚠️ Temperatura inferior a 5°C. El instructivo exige uso de aditivos y agua caliente.
-            </div>
-          )}
-          {alertaEpoca && (
-            <div className="p-3 rounded-lg bg-status-yellow/10 border border-status-yellow/20 text-xs text-status-yellow">
-              ⚠️ Período mayo-septiembre: el instructivo requiere curado con mantas térmicas.
-            </div>
-          )}
         </CardContent>
       </Card>
 
-      {/* Equipo del Día — Multi-select dropdowns 2×2 */}
+      {/* Equipo del Día */}
       <Card className="bg-card/50 border-border/50">
         <CardHeader className="pb-2"><CardTitle className="text-base">Equipo del Día</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label className="flex items-center gap-1.5 mb-1.5">
-                <span>🔩</span> Enfierradura
-              </Label>
-              <MultiSelectDropdown
-                options={getOperatorOptions('enfierradura')}
-                selected={opEnfierradura}
-                onChange={setOpEnfierradura}
-                placeholder="Seleccionar..."
-              />
+              <Label className="flex items-center gap-1.5 mb-1.5"><span>🔩</span> Enfierradura</Label>
+              <MultiSelectDropdown options={getOperatorOptions('enfierradura')} selected={opEnfierradura} onChange={setOpEnfierradura} placeholder="Seleccionar..." />
             </div>
             <div>
-              <Label className="flex items-center gap-1.5 mb-1.5">
-                <span>📐</span> Moldaje
-              </Label>
-              <MultiSelectDropdown
-                options={getOperatorOptions('moldaje')}
-                selected={opMoldaje}
-                onChange={setOpMoldaje}
-                placeholder="Seleccionar..."
-              />
+              <Label className="flex items-center gap-1.5 mb-1.5"><span>📐</span> Moldaje</Label>
+              <MultiSelectDropdown options={getOperatorOptions('moldaje')} selected={opMoldaje} onChange={setOpMoldaje} placeholder="Seleccionar..." />
             </div>
             <div>
-              <Label className="flex items-center gap-1.5 mb-1.5">
-                <span>🏗️</span> Hormigonado
-              </Label>
-              <MultiSelectDropdown
-                options={getOperatorOptions('hormigonado')}
-                selected={opHormigonado}
-                onChange={setOpHormigonado}
-                placeholder="Seleccionar..."
-              />
+              <Label className="flex items-center gap-1.5 mb-1.5"><span>🏗️</span> Hormigonado</Label>
+              <MultiSelectDropdown options={getOperatorOptions('hormigonado')} selected={opHormigonado} onChange={setOpHormigonado} placeholder="Seleccionar..." />
             </div>
             <div>
-              <Label className="flex items-center gap-1.5 mb-1.5">
-                <span>💧</span> Curado
-              </Label>
-              <MultiSelectDropdown
-                options={getOperatorOptions('curado')}
-                selected={opCurado}
-                onChange={setOpCurado}
-                placeholder="Seleccionar..."
-              />
+              <Label className="flex items-center gap-1.5 mb-1.5"><span>💧</span> Curado</Label>
+              <MultiSelectDropdown options={getOperatorOptions('curado')} selected={opCurado} onChange={setOpCurado} placeholder="Seleccionar..." />
             </div>
           </div>
-
-          {/* Resumen de asignados */}
-          {(opEnfierradura.length + opMoldaje.length + opHormigonado.length + opCurado.length) > 0 && (
-            <div className="pt-2 border-t border-border/30">
-              <p className="text-xs text-muted-foreground">
-                <span className="font-medium text-foreground/70">Asignados: </span>
-                {[...new Set([...opEnfierradura, ...opMoldaje, ...opHormigonado, ...opCurado])].map(id => {
-                  const t = trabajadores.find(tr => tr.id === id);
-                  const roles: string[] = [];
-                  if (opEnfierradura.includes(id)) roles.push('E');
-                  if (opMoldaje.includes(id)) roles.push('M');
-                  if (opHormigonado.includes(id)) roles.push('H');
-                  if (opCurado.includes(id)) roles.push('C');
-                  return `${t?.nombre || id} (${roles.join(',')})`;
-                }).join(' · ')}
-              </p>
-            </div>
-          )}
         </CardContent>
       </Card>
 
-      {/* Materiales y Dosificación — Dropdowns 2×2 */}
+      {/* Materiales */}
       <Card className="bg-card/50 border-border/50">
         <CardHeader className="pb-2"><CardTitle className="text-base">Materiales y Dosificación</CardTitle></CardHeader>
         <CardContent className="space-y-4">
@@ -360,7 +294,7 @@ export default function NuevaJornadaPage() {
                       onChange={e => setSelectedMaterials(prev => ({ ...prev, [tipoMat.value]: e.target.value }))}
                       className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
                     >
-                      {activos.length > 1 && <option value="">Seleccionar...</option>}
+                      <option value="">Seleccionar...</option>
                       {activos.map(mat => (
                         <option key={mat.id} value={mat.id}>
                           {mat.codigo_lote}{mat.proveedor ? ` — ${mat.proveedor}` : ''}
@@ -368,19 +302,14 @@ export default function NuevaJornadaPage() {
                       ))}
                     </select>
                   )}
-                  {/* Info del material seleccionado */}
                   {selectedInfo && (
                     <div className="mt-1 flex items-center gap-1.5 flex-wrap">
                       <span className="text-[11px] text-muted-foreground">
                         {selectedInfo.proveedor && `${selectedInfo.proveedor}`}
                         {selectedInfo.fecha_recepcion && ` · ${selectedInfo.fecha_recepcion}`}
                       </span>
-                      {certStatus === 'vencido' && (
-                        <span className="text-[10px] text-status-red">⚠️ Cert. vencido</span>
-                      )}
-                      {certStatus === 'por_vencer' && (
-                        <span className="text-[10px] text-status-yellow">⚠️ Cert. por vencer</span>
-                      )}
+                      {certStatus === 'vencido' && <span className="text-[10px] text-status-red">⚠️ Cert. vencido</span>}
+                      {certStatus === 'por_vencer' && <span className="text-[10px] text-status-yellow">⚠️ Cert. por vencer</span>}
                     </div>
                   )}
                 </div>
@@ -388,7 +317,6 @@ export default function NuevaJornadaPage() {
             })}
           </div>
 
-          {/* Cono de Abrams */}
           <div className="flex items-end gap-4">
             <div className="flex-1 max-w-xs">
               <Label className="flex items-center gap-1.5 mb-1.5">
@@ -407,8 +335,8 @@ export default function NuevaJornadaPage() {
       </Card>
 
       <div className="flex justify-end gap-3">
-        <Button variant="outline" onClick={() => router.back()}>Cancelar</Button>
-        <Button onClick={handleSave} disabled={tiposPoste.length === 0} size="lg">Guardar jornada</Button>
+        <Button variant="outline" onClick={() => router.push(`/fabrica/jornadas/${id}`)}>Cancelar</Button>
+        <Button onClick={handleSave} disabled={tiposPoste.length === 0} size="lg">💾 Guardar cambios</Button>
       </div>
     </div>
   );

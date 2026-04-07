@@ -1,13 +1,15 @@
 'use client';
 
 import { useApp } from '@/lib/store';
+import { useAuth } from '@/lib/auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { StatCard } from '@/components/stat-card';
 
 export default function EnsayosPage() {
-  const { currentFabricaId, getEnsayosByFabrica } = useApp();
-  const ensayos = getEnsayosByFabrica(currentFabricaId).sort((a, b) => b.fecha_muestra.localeCompare(a.fecha_muestra));
+  const { planta } = useAuth();
+  const { getEnsayosByPlanta } = useApp();
+  const ensayos = getEnsayosByPlanta(planta?.id || '').sort((a, b) => b.fecha_muestra.localeCompare(a.fecha_muestra));
 
   const ultimo = ensayos[0];
   const diasDesdeUltimo = ultimo

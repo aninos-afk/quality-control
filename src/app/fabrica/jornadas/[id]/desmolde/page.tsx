@@ -3,6 +3,7 @@
 import { use, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/lib/store';
+import { useAuth } from '@/lib/auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -18,7 +19,8 @@ interface Props {
 export default function DesmoldePage({ params }: Props) {
   const { id } = use(params);
   const router = useRouter();
-  const { getJornada, addDesmolde, updateJornada } = useApp();
+  const { user, planta } = useAuth();
+  const { getJornada, getNCByPlanta, addDesmolde, addNC, updateJornada } = useApp();
   const jornada = getJornada(id);
 
   const [fecha, setFecha] = useState(format(new Date(), 'yyyy-MM-dd'));
@@ -36,7 +38,34 @@ export default function DesmoldePage({ params }: Props) {
       eslinga_dos_puntos: eslinga,
       defectos_detectados: defectos,
       observaciones: observaciones || undefined,
+      created_by: user?.id,
     });
+
+    // Auto-crear NC si se detectaron defectos
+    if (defectos) {
+      const plantaId = planta?.id || jornada?.planta_id || '';
+      const ncsExistentes = getNCByPlanta(plantaId);
+      const año = new Date().getFullYear();
+      const siguiente = ncsExistentes.filter(nc => nc.numero.includes(`${año}`)).length + 1;
+      const codigoPlanta = planta?.codigo || 'PLT';
+      const numero = `${codigoPlanta}-${año}-${String(siguiente).padStart(3, '0')}`;
+
+      addNC({
+        id: `nc-auto-des-${Date.now()}`,
+        planta_id: plantaId,
+        numero,
+        nivel: 'producto',
+        jornada_id: id,
+        fecha_deteccion: fecha,
+        origen: 'desmolde',
+        tipo_defecto: 'despunte_desprendimiento',
+        detalle: observaciones || 'Defectos visuales detectados durante desmolde',
+        accion_inmediata: 'Segregación del elemento para revisión',
+        estado: 'abierta',
+        created_by: user?.id,
+      });
+    }
+
     updateJornada(id, { estado: 'desmolde_registrado' });
     router.push(`/fabrica/jornadas/${id}`);
   };
@@ -85,7 +114,7 @@ export default function DesmoldePage({ params }: Props) {
             <div className="p-4 rounded-xl border border-status-red/20 bg-status-red/5 space-y-3">
               <p className="text-sm font-medium text-status-red">Registrar defectos detectados</p>
               <p className="text-xs text-muted-foreground">
-                Los defectos se registrarán como No Conformidades en el Módulo 6.
+                ⚠️ Se creará automáticamente una No Conformidad vinculada a esta jornada.
               </p>
               <Textarea placeholder="Describa los defectos detectados..." value={observaciones} onChange={e => setObservaciones(e.target.value)} />
             </div>

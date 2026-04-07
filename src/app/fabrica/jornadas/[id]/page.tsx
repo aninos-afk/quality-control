@@ -2,7 +2,9 @@
 
 import { use } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useApp } from '@/lib/store';
+import { useAuth } from '@/lib/auth';
 import { EstadoJornadaBadge } from '@/components/estado-badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,10 +17,47 @@ interface Props {
 
 export default function JornadaDetallePage({ params }: Props) {
   const { id } = use(params);
-  const { getJornada, getVerificacionesByJornada, getDesmoldeByJornada, getProductoTerminadoByJornada, getNCByJornada, trabajadores } = useApp();
+  const { getJornada, getVerificacionesByJornada, getDesmoldeByJornada, getProductoTerminadoByJornada, getNCByJornada, trabajadores, updateJornada, addAuditLog } = useApp();
+  const { user, can } = useAuth();
+  const router = useRouter();
 
   const jornada = getJornada(id);
   if (!jornada) return <div className="text-center py-20 text-muted-foreground">Jornada no encontrada</div>;
+
+  const handleLiberar = () => {
+    updateJornada(id, { estado: 'cerrada' });
+    addAuditLog({
+      id: `audit-${Date.now()}`,
+      fecha: new Date().toISOString().slice(0, 10),
+      hora: new Date().toTimeString().slice(0, 5),
+      usuario_id: user?.id || '',
+      usuario_nombre: user?.nombre || '',
+      rol: user?.rol || 'jefe_planta',
+      accion: 'liberar_jornada',
+      modulo: 'jornadas',
+      detalle: `Jornada ${jornada.codigo} liberada`,
+      planta_id: jornada.planta_id,
+    });
+    router.refresh();
+  };
+
+  const handleToggleVisibleExterno = () => {
+    const nuevoEstado = !jornada.visible_externo;
+    updateJornada(id, { visible_externo: nuevoEstado });
+    addAuditLog({
+      id: `audit-vis-${Date.now()}`,
+      fecha: new Date().toISOString().slice(0, 10),
+      hora: new Date().toTimeString().slice(0, 5),
+      usuario_id: user?.id || '',
+      usuario_nombre: user?.nombre || '',
+      rol: user?.rol || 'jefe_planta',
+      accion: nuevoEstado ? 'publicar_jornada' : 'ocultar_jornada',
+      modulo: 'jornadas',
+      detalle: `Jornada ${jornada.codigo} ${nuevoEstado ? 'publicada al auditor externo' : 'retirada de visibilidad externa'}`,
+      planta_id: jornada.planta_id,
+    });
+    router.refresh();
+  };
 
   const verificaciones = getVerificacionesByJornada(id);
   const desmolde = getDesmoldeByJornada(id);
@@ -57,7 +96,29 @@ export default function JornadaDetallePage({ params }: Props) {
             {jornada.fecha} | Destino: {DESTINOS_LABELS[jornada.destino]} | Tipos: {jornada.tipos_poste.join(', ')}
           </p>
         </div>
-        <Link href="/fabrica/jornadas"><Button variant="outline" size="sm">← Volver</Button></Link>
+        <div className="flex items-center gap-2">
+          {can('toggle_visible_externo') && jornada.estado === 'cerrada' && (
+            <button
+              onClick={handleToggleVisibleExterno}
+              className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border font-medium transition-all ${
+                jornada.visible_externo
+                  ? 'bg-status-blue/10 border-status-blue/30 text-status-blue hover:bg-status-blue/20'
+                  : 'bg-muted/30 border-border/50 text-muted-foreground hover:bg-muted/50'
+              }`}
+            >
+              {jornada.visible_externo ? '👁️ Visible al auditor' : '🔒 Solo interno'}
+            </button>
+          )}
+          {can('liberar_producto') && jornada.estado === 'producto_terminado' && (
+            <Button size="sm" className="bg-status-green hover:bg-status-green/90 text-white" onClick={handleLiberar}>
+              ✅ Liberar Jornada
+            </Button>
+          )}
+          {can('editar_jornada') && jornada.estado !== 'cerrada' && (
+            <Link href={`/fabrica/jornadas/${id}/editar`}><Button variant="outline" size="sm">✏️ Editar</Button></Link>
+          )}
+          <Link href="/fabrica/jornadas"><Button variant="outline" size="sm">← Volver</Button></Link>
+        </div>
       </div>
 
       {/* Steps */}

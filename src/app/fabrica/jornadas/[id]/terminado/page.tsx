@@ -3,6 +3,7 @@
 import { use, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/lib/store';
+import { useAuth } from '@/lib/auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -28,7 +29,8 @@ const PUNTO_BUTTONS = [
 export default function ProductoTerminadoPage({ params }: Props) {
   const { id } = use(params);
   const router = useRouter();
-  const { getJornada, addProductoTerminado, updateJornada } = useApp();
+  const { user, planta, can } = useAuth();
+  const { getJornada, getNCByPlanta, addProductoTerminado, addNC, updateJornada } = useApp();
   const jornada = getJornada(id);
 
   const [fecha, setFecha] = useState(format(new Date(), 'yyyy-MM-dd'));
@@ -48,6 +50,11 @@ export default function ProductoTerminadoPage({ params }: Props) {
   const hasNC = Object.values(puntos).some(v => v === 'NC');
 
   const handleSave = () => {
+    const puedeLiberar = can('liberar_producto');
+    const hayNC = hasNC || ncDetectadas;
+    // El patio NUNCA puede auto-cerrar: el cierre requiere can('liberar_producto')
+    const cerrarDirectamente = puedeLiberar && liberacion && !hayNC;
+
     addProductoTerminado({
       id: `pt-new-${Date.now()}`,
       jornada_id: id,
@@ -59,9 +66,36 @@ export default function ProductoTerminadoPage({ params }: Props) {
       observaciones: observaciones || undefined,
       resultado: hasNC ? 'no_conforme' : 'conforme',
       nc_detectadas: ncDetectadas,
-      liberacion_confirmada: liberacion,
+      liberacion_confirmada: cerrarDirectamente,
+      created_by: user?.id,
     } as any);
-    updateJornada(id, { estado: liberacion ? 'cerrada' : 'producto_terminado' });
+
+    // Auto-crear NC si hay puntos NC o si el operador marcó postes no conformes
+    if (hayNC) {
+      const plantaId = planta?.id || jornada?.planta_id || '';
+      const ncsExistentes = getNCByPlanta(plantaId);
+      const año = new Date().getFullYear();
+      const siguiente = ncsExistentes.filter(nc => nc.numero.includes(`${año}`)).length + 1;
+      const codigoPlanta = planta?.codigo || 'PLT';
+      const numero = `${codigoPlanta}-${año}-${String(siguiente).padStart(3, '0')}`;
+
+      addNC({
+        id: `nc-auto-pt-${Date.now()}`,
+        planta_id: plantaId,
+        numero,
+        nivel: 'producto',
+        jornada_id: id,
+        fecha_deteccion: fecha,
+        origen: 'producto_terminado',
+        tipo_defecto: hasNC ? 'fisura_superficial' : 'otro',
+        detalle: observaciones || 'No conformidades detectadas en inspección de producto terminado',
+        accion_inmediata: 'Segregación para revisión por encargado de calidad',
+        estado: 'abierta',
+        created_by: user?.id,
+      });
+    }
+
+    updateJornada(id, { estado: cerrarDirectamente ? 'cerrada' : 'producto_terminado' });
     router.push(`/fabrica/jornadas/${id}`);
   };
 
@@ -159,19 +193,42 @@ export default function ProductoTerminadoPage({ params }: Props) {
 
           <Separator />
 
-          <div className="flex items-center gap-3 p-4 rounded-xl border border-status-green/20 bg-status-green/5">
-            <input type="checkbox" checked={liberacion} onChange={e => setLiberacion(e.target.checked)} className="w-5 h-5 accent-[var(--status-green)]" />
-            <div>
-              <p className="text-sm font-medium">Confirmo la liberación</p>
-              <p className="text-xs text-muted-foreground">Los postes de esta jornada están conformes para su destino.</p>
+          {(hasNC || ncDetectadas) ? (
+            <div className="flex items-center gap-3 p-4 rounded-xl border border-status-red/20 bg-status-red/5">
+              <div>
+                <p className="text-sm font-bold text-status-red">🚫 Liberación Bloqueada</p>
+                <p className="text-xs text-status-red/80">
+                  Se detectaron No Conformidades. Se creará una NC automáticamente.
+                  {can('liberar_producto')
+                    ? ' Guarde el reporte y luego use “Liberar Jornada” tras revisar.'
+                    : ' Jefatura o Calidad deben revisar y liberar la jornada.'}
+                </p>
+              </div>
             </div>
-          </div>
+          ) : can('liberar_producto') ? (
+            <div className="flex items-center gap-3 p-4 rounded-xl border border-status-green/20 bg-status-green/5 transition-opacity">
+              <input type="checkbox" checked={liberacion} onChange={e => setLiberacion(e.target.checked)} className="w-5 h-5 accent-[var(--status-green)]" />
+              <div>
+                <p className="text-sm font-medium">Confirmo la liberación</p>
+                <p className="text-xs text-muted-foreground">Los postes de esta jornada están conformes para su destino.</p>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-3 p-4 rounded-xl border border-status-blue/20 bg-status-blue/5">
+              <div>
+                <p className="text-sm font-medium text-status-blue">🔒 Reporte listo para liberar</p>
+                <p className="text-xs text-muted-foreground">El Jefe de Planta o Encargado de Calidad deberá revisar este reporte y liberar la jornada.</p>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
       <div className="flex justify-end">
         <Button onClick={handleSave} disabled={!allCompleted} size="lg">
-          {liberacion ? 'Guardar y cerrar jornada' : 'Guardar producto terminado'}
+          {can('liberar_producto') && liberacion && !hasNC && !ncDetectadas
+            ? 'Guardar y cerrar jornada'
+            : 'Guardar reporte de inspección'}
         </Button>
       </div>
     </div>

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useApp } from '@/lib/store';
+import { useAuth } from '@/lib/auth';
 import { SemaforoResumen } from '@/components/semaforo';
 import { StatCard } from '@/components/stat-card';
 import { EstadoJornadaBadge } from '@/components/estado-badge';
@@ -12,12 +13,14 @@ import { es } from 'date-fns/locale';
 import { DESTINOS_LABELS } from '@/lib/constants';
 
 export default function FabricaDashboard() {
-  const { currentFabricaId, getCondicionesByFabrica, getJornadasByFabrica, getNCByFabrica, getEnsayosByFabrica, getFabrica } = useApp();
-  const fabrica = getFabrica(currentFabricaId);
-  const condiciones = getCondicionesByFabrica(currentFabricaId);
-  const jornadas = getJornadasByFabrica(currentFabricaId);
-  const ncs = getNCByFabrica(currentFabricaId);
-  const ensayos = getEnsayosByFabrica(currentFabricaId);
+  const { planta, empresa } = useAuth();
+  const { getCondicionesByPlanta, getJornadasByPlanta, getNCByPlanta, getEnsayosByPlanta } = useApp();
+
+  const plantaId = planta?.id || '';
+  const condiciones = getCondicionesByPlanta(plantaId);
+  const jornadas = getJornadasByPlanta(plantaId);
+  const ncs = getNCByPlanta(plantaId);
+  const ensayos = getEnsayosByPlanta(plantaId);
 
   const vigentes = condiciones.filter(c => c.estado === 'vigente').length;
   const porVencer = condiciones.filter(c => c.estado === 'por_vencer').length;
@@ -37,8 +40,9 @@ export default function FabricaDashboard() {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold">{fabrica?.nombre || 'Dashboard'}</h1>
+        <h1 className="text-2xl font-bold">{planta?.nombre || 'Dashboard'}</h1>
         <p className="text-muted-foreground text-sm mt-1">
+          {empresa?.nombre && <span className="text-foreground/70">{empresa.nombre} — </span>}
           {format(new Date(), "EEEE d 'de' MMMM 'de' yyyy", { locale: es })}
         </p>
       </div>

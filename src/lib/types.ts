@@ -22,6 +22,8 @@ export type TipoCondicion = 'certificado_mp' | 'calibracion' | 'mantencion' | 'c
 
 export type OrigenNC = 'verificacion_fabricacion' | 'desmolde' | 'producto_terminado' | 'manual';
 
+export type NivelNC = 'proceso' | 'producto';
+
 export type EstadoNC = 'abierta' | 'cerrada';
 
 export type EstadoAC = 'abierta' | 'en_ejecucion' | 'cerrada' | 'verificada_eficaz' | 'verificada_no_eficaz';
@@ -30,14 +32,26 @@ export type MedidaProteccion = 'aditivos' | 'agua_caliente' | 'mantas_termicas' 
 
 export type MetodoCurado = 'membrana_cavecur' | 'riego_manual' | 'aspersion' | 'mantas_termicas_riego';
 
-export type RolUsuario = 'encargado_calidad' | 'jefe_planta' | 'auditor' | 'admin';
+export type RolUsuario = 'auditor_plataforma' | 'auditor_externo' | 'encargado_calidad' | 'jefe_planta' | 'encargado_patio';
+
+export type TipoMaterial = 'cemento' | 'aridos' | 'acero' | 'aditivo';
 
 // =============================================
-// ENTITIES
+// PLATFORM ENTITIES
 // =============================================
 
-export interface Fabrica {
+export interface Empresa {
   id: string;
+  nombre: string;
+  slug: string;
+  rut?: string;
+  contacto?: string;
+  created_at: string;
+}
+
+export interface Planta {
+  id: string;
+  empresa_id: string;
   nombre: string;
   codigo: string;
   direccion?: string;
@@ -46,23 +60,43 @@ export interface Fabrica {
 
 export interface Usuario {
   id: string;
-  fabrica_id?: string;
+  empresa_id?: string;       // undefined for auditor (cross-company)
+  planta_id?: string;         // undefined for enc_calidad (cross-plant) and auditor
   nombre: string;
   rol: RolUsuario;
   email: string;
+  password: string;           // plain text for demo mode
 }
+
+// =============================================
+// OPERATIONAL ENTITIES
+// =============================================
 
 export interface Molde {
   id: string;
-  fabrica_id: string;
+  planta_id: string;
   numero: string;
   tipo_poste?: TipoPoste;
   activo: boolean;
 }
 
+export interface MaterialActivo {
+  id: string;
+  planta_id: string;
+  tipo: TipoMaterial;
+  codigo_lote: string;
+  proveedor?: string;
+  descripcion?: string;
+  fecha_recepcion?: string;
+  certificado_id?: string;       // link a CondicionHabilitante
+  activo: boolean;
+  created_by: string;
+  created_at: string;
+}
+
 export interface Trabajador {
   id: string;
-  fabrica_id: string;
+  planta_id: string;
   nombre: string;
   actividades_habilitadas: string[];
   fecha_ultima_capacitacion?: string;
@@ -72,7 +106,7 @@ export interface Trabajador {
 
 export interface CondicionHabilitante {
   id: string;
-  fabrica_id: string;
+  planta_id: string;
   tipo: TipoCondicion;
   descripcion: string;
   norma_referencia?: string;
@@ -82,11 +116,13 @@ export interface CondicionHabilitante {
   entidad_emisora?: string;
   documento_url?: string;
   estado: EstadoCondicion;
+  created_by?: string;        // user id
+  created_at?: string;
 }
 
 export interface Jornada {
   id: string;
-  fabrica_id: string;
+  planta_id: string;
   fecha: string;
   codigo: string;
   tipos_poste: TipoPoste[];
@@ -98,6 +134,11 @@ export interface Jornada {
   partida_aridos?: string;
   lote_acero?: string;
   aditivo_detalle?: string;
+  // IDs de MaterialActivo seleccionados
+  material_cemento_id?: string;
+  material_aridos_id?: string;
+  material_acero_id?: string;
+  material_aditivo_id?: string;
   cono_abrams_mm?: number;
   operadores_enfierradura: string[];
   operadores_moldaje: string[];
@@ -107,6 +148,8 @@ export interface Jornada {
   encargado_calidad_id?: string;
   estado: EstadoJornada;
   alertas?: string[];
+  visible_externo?: boolean;  // Fábrica controla si esta jornada es visible al auditor externo
+  created_by?: string;
   created_at: string;
 }
 
@@ -141,6 +184,7 @@ export interface VerificacionFabricacion {
   hor_membrana_curado: PuntoVerificacion;
   observaciones?: string;
   resultado?: ResultadoVerificacion;
+  created_by?: string;
 }
 
 export interface RegistroDesmolde {
@@ -150,6 +194,7 @@ export interface RegistroDesmolde {
   eslinga_dos_puntos: boolean;
   defectos_detectados: boolean;
   observaciones?: string;
+  created_by?: string;
 }
 
 export interface RegistroProductoTerminado {
@@ -167,12 +212,14 @@ export interface RegistroProductoTerminado {
   resultado?: ResultadoVerificacion;
   nc_detectadas: boolean;
   liberacion_confirmada: boolean;
+  created_by?: string;
 }
 
 export interface NoConformidad {
   id: string;
-  fabrica_id: string;
+  planta_id: string;
   numero: string;
+  nivel: NivelNC;
   jornada_id?: string;
   fecha_deteccion: string;
   origen: OrigenNC;
@@ -186,11 +233,12 @@ export interface NoConformidad {
   apto_saesa?: boolean;
   estado: EstadoNC;
   fecha_cierre?: string;
+  created_by?: string;
 }
 
 export interface AccionCorrectiva {
   id: string;
-  fabrica_id: string;
+  planta_id: string;
   numero: string;
   descripcion: string;
   analisis_causa?: string;
@@ -205,7 +253,7 @@ export interface AccionCorrectiva {
 
 export interface EnsayoCompresion {
   id: string;
-  fabrica_id: string;
+  planta_id: string;
   jornada_id?: string;
   fecha_muestra: string;
   tipo_hormigon?: string;
@@ -215,4 +263,41 @@ export interface EnsayoCompresion {
   certificado_url?: string;
   cumple?: boolean;
   observaciones?: string;
+  created_by?: string;
 }
+
+// =============================================
+// AUDIT & OBSERVATIONS
+// =============================================
+
+export interface AuditLogEntry {
+  id: string;
+  usuario_id: string;
+  usuario_nombre: string;
+  rol: RolUsuario;
+  empresa_id?: string;
+  planta_id?: string;
+  accion: string;
+  modulo: string;
+  detalle?: string;
+  fecha: string;
+  hora: string;
+}
+
+export interface ObservacionAuditor {
+  id: string;
+  auditor_id: string;
+  empresa_id: string;
+  planta_id?: string;
+  entidad_tipo: 'condicion' | 'nc' | 'planta' | 'informe' | 'general';
+  entidad_id?: string;
+  texto: string;
+  fecha: string;
+  hora: string;
+}
+
+// =============================================
+// FABRICA_ID COMPATIBILITY (legacy → planta_id)
+// =============================================
+// All entities now use planta_id instead of fabrica_id.
+// The old Fabrica type is replaced by Empresa + Planta.

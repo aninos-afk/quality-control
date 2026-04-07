@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/lib/store';
+import { useAuth } from '@/lib/auth';
 import { EstadoJornadaBadge } from '@/components/estado-badge';
 import { JornadaCalendar } from '@/components/jornada-calendar';
 import { Button } from '@/components/ui/button';
@@ -15,8 +16,9 @@ type ViewMode = 'calendario' | 'lista';
 
 export default function JornadasPage() {
   const router = useRouter();
-  const { currentFabricaId, getJornadasByFabrica } = useApp();
-  const jornadas = getJornadasByFabrica(currentFabricaId).sort((a, b) => b.fecha.localeCompare(a.fecha));
+  const { planta } = useAuth();
+  const { getJornadasByPlanta } = useApp();
+  const jornadas = getJornadasByPlanta(planta?.id || '').sort((a, b) => b.fecha.localeCompare(a.fecha));
   const [view, setView] = useState<ViewMode>('calendario');
 
   return (

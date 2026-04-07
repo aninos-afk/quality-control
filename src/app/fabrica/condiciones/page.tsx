@@ -1,14 +1,16 @@
 'use client';
 
 import { useApp } from '@/lib/store';
+import { useAuth } from '@/lib/auth';
 import { Semaforo } from '@/components/semaforo';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { TIPOS_CONDICION } from '@/lib/constants';
 
 export default function CondicionesPage() {
-  const { currentFabricaId, getCondicionesByFabrica } = useApp();
-  const condiciones = getCondicionesByFabrica(currentFabricaId);
+  const { planta } = useAuth();
+  const { getCondicionesByPlanta } = useApp();
+  const condiciones = getCondicionesByPlanta(planta?.id || '');
 
   const grouped = TIPOS_CONDICION.map(tipo => ({
     ...tipo,
@@ -23,7 +25,7 @@ export default function CondicionesPage() {
       </div>
 
       {/* Summary bar */}
-      <div className="flex gap-4">
+      <div className="flex gap-4 flex-wrap">
         {(['vigente', 'por_vencer', 'vencido'] as const).map(estado => {
           const count = condiciones.filter(c => c.estado === estado).length;
           const labels = { vigente: 'Vigentes', por_vencer: 'Por vencer', vencido: 'Vencidas' };

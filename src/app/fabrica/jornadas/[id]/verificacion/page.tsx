@@ -3,6 +3,7 @@
 import { use, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/lib/store';
+import { useAuth } from '@/lib/auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -25,9 +26,10 @@ const PUNTO_BUTTONS: PuntoButton[] = [
 export default function VerificacionPage({ params }: Props) {
   const { id } = use(params);
   const router = useRouter();
-  const { getJornada, getMoldesByFabrica, currentFabricaId, addVerificacion, updateJornada } = useApp();
+  const { user, planta } = useAuth();
+  const { getJornada, getMoldesByPlanta, addVerificacion, updateJornada } = useApp();
   const jornada = getJornada(id);
-  const moldes = getMoldesByFabrica(currentFabricaId);
+  const moldes = getMoldesByPlanta(planta?.id || '');
 
   const [activeTab, setActiveTab] = useState(0);
   const [forms, setForms] = useState<Record<string, Record<string, PuntoVerificacion>>>(() => {
@@ -58,7 +60,9 @@ export default function VerificacionPage({ params }: Props) {
   const hasNC = Object.values(currentForm).some(v => v === 'NC');
 
   const handleSave = () => {
-    jornada.tipos_poste.forEach((tp, idx) => {
+    // Solo registra el resultado como dato histórico del proceso.
+    // Los puntos NC son correcciones en proceso; no escalan automáticamente a NC formal.
+    jornada!.tipos_poste.forEach((tp, idx) => {
       const form = forms[tp];
       const resultado = Object.values(form).some(v => v === 'NC') ? 'no_conforme' : 'conforme';
       const verificacion: VerificacionFabricacion = {
@@ -68,9 +72,11 @@ export default function VerificacionPage({ params }: Props) {
         ...Object.fromEntries(Object.entries(form)),
         observaciones: observations[tp] || undefined,
         resultado,
+        created_by: user?.id,
       } as VerificacionFabricacion;
       addVerificacion(verificacion);
     });
+
     updateJornada(id, { estado: 'fabricacion_verificada' });
     router.push(`/fabrica/jornadas/${id}`);
   };

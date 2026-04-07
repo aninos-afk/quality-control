@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { AppProvider } from "@/lib/store";
+import { AuthProvider } from "@/lib/auth";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 const inter = Inter({
@@ -10,8 +11,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Control de Calidad — Postes",
-  description: "Sistema de control de calidad para fábricas de postes de hormigón armado — Grupo SAESA",
+  title: "Gestión de Calidad",
+  description: "Sistema de gestión y trazabilidad de producción",
 };
 
 export default function RootLayout({
@@ -22,11 +23,13 @@ export default function RootLayout({
   return (
     <html lang="es" className="dark" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans`}>
-        <AppProvider>
-          <TooltipProvider>
-            {children}
-          </TooltipProvider>
-        </AppProvider>
+        <AuthProvider>
+          <AppProvider>
+            <TooltipProvider>
+              {children}
+            </TooltipProvider>
+          </AppProvider>
+        </AuthProvider>
       </body>
     </html>
   );

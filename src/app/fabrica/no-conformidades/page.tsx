@@ -1,14 +1,16 @@
 'use client';
 
 import { useApp } from '@/lib/store';
+import { useAuth } from '@/lib/auth';
 import { EstadoNCBadge } from '@/components/estado-badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { TIPOS_DEFECTO, DISPOSICIONES_PNC } from '@/lib/constants';
 
 export default function NoConformidadesPage() {
-  const { currentFabricaId, getNCByFabrica } = useApp();
-  const ncs = getNCByFabrica(currentFabricaId).sort((a, b) => b.fecha_deteccion.localeCompare(a.fecha_deteccion));
+  const { planta } = useAuth();
+  const { getNCByPlanta } = useApp();
+  const ncs = getNCByPlanta(planta?.id || '').sort((a, b) => b.fecha_deteccion.localeCompare(a.fecha_deteccion));
   const ncAbiertas = ncs.filter(nc => nc.estado === 'abierta');
   const ncCerradas = ncs.filter(nc => nc.estado === 'cerrada');
 

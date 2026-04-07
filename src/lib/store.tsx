@@ -1,31 +1,57 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
 import type {
-  Fabrica, Molde, Trabajador, CondicionHabilitante,
+  Empresa, Planta, Molde, Trabajador, CondicionHabilitante,
   Jornada, VerificacionFabricacion, RegistroDesmolde,
   RegistroProductoTerminado, NoConformidad, AccionCorrectiva,
-  EnsayoCompresion, RolUsuario, Usuario,
+  EnsayoCompresion, AuditLogEntry, ObservacionAuditor, Usuario,
+  MaterialActivo,
 } from './types';
 import {
-  MOCK_FABRICAS, MOCK_USUARIOS, MOCK_MOLDES, MOCK_TRABAJADORES,
+  MOCK_EMPRESAS, MOCK_PLANTAS, MOCK_USUARIOS, MOCK_MOLDES, MOCK_TRABAJADORES,
   MOCK_CONDICIONES, MOCK_JORNADAS, MOCK_VERIFICACIONES,
   MOCK_DESMOLDES, MOCK_PRODUCTO_TERMINADO, MOCK_NC,
-  MOCK_AC, MOCK_ENSAYOS,
+  MOCK_AC, MOCK_ENSAYOS, MOCK_MATERIALES,
 } from './mock-data';
 
+// =============================================
+// PERSISTENCIA EN localStorage
+// Versión: incrementar si cambia el schema de datos
+// para forzar reinicio limpio en clientes existentes.
+// =============================================
+const STORAGE_VERSION = 'qc_v5';
+const SK = (key: string) => `${STORAGE_VERSION}_${key}`;
+
+function fromStorage<T>(key: string, fallback: T): T {
+  if (typeof window === 'undefined') return fallback;
+  try {
+    const raw = localStorage.getItem(SK(key));
+    if (raw !== null) return JSON.parse(raw) as T;
+  } catch {
+    // Si el JSON está corrupto, ignorar y usar fallback
+  }
+  return fallback;
+}
+
+function toStorage<T>(key: string, value: T): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(SK(key), JSON.stringify(value));
+  } catch {
+    // localStorage lleno u otro error — silencioso
+  }
+}
+
 interface AppState {
-  // Auth
-  currentUser: Usuario | null;
-  currentRole: RolUsuario;
-  currentFabricaId: string;
-  setRole: (role: RolUsuario) => void;
   // Data
-  fabricas: Fabrica[];
+  empresas: Empresa[];
+  plantas: Planta[];
   usuarios: Usuario[];
   moldes: Molde[];
   trabajadores: Trabajador[];
   condiciones: CondicionHabilitante[];
+  materiales: MaterialActivo[];
   jornadas: Jornada[];
   verificaciones: VerificacionFabricacion[];
   desmoldes: RegistroDesmolde[];
@@ -33,19 +59,25 @@ interface AppState {
   noConformidades: NoConformidad[];
   accionesCorrectivas: AccionCorrectiva[];
   ensayos: EnsayoCompresion[];
+  auditLog: AuditLogEntry[];
+  observaciones: ObservacionAuditor[];
   // Helpers
-  getFabrica: (id: string) => Fabrica | undefined;
+  getEmpresa: (id: string) => Empresa | undefined;
+  getPlanta: (id: string) => Planta | undefined;
+  getPlantasByEmpresa: (empresaId: string) => Planta[];
   getJornada: (id: string) => Jornada | undefined;
-  getJornadasByFabrica: (fabricaId: string) => Jornada[];
+  getJornadasByPlanta: (plantaId: string) => Jornada[];
   getVerificacionesByJornada: (jornadaId: string) => VerificacionFabricacion[];
   getDesmoldeByJornada: (jornadaId: string) => RegistroDesmolde | undefined;
   getProductoTerminadoByJornada: (jornadaId: string) => RegistroProductoTerminado | undefined;
-  getNCByFabrica: (fabricaId: string) => NoConformidad[];
+  getNCByPlanta: (plantaId: string) => NoConformidad[];
   getNCByJornada: (jornadaId: string) => NoConformidad[];
-  getCondicionesByFabrica: (fabricaId: string) => CondicionHabilitante[];
-  getEnsayosByFabrica: (fabricaId: string) => EnsayoCompresion[];
-  getMoldesByFabrica: (fabricaId: string) => Molde[];
-  getTrabajadoresByFabrica: (fabricaId: string) => Trabajador[];
+  getCondicionesByPlanta: (plantaId: string) => CondicionHabilitante[];
+  getEnsayosByPlanta: (plantaId: string) => EnsayoCompresion[];
+  getMoldesByPlanta: (plantaId: string) => Molde[];
+  getTrabajadoresByPlanta: (plantaId: string) => Trabajador[];
+  getObservacionesByPlanta: (plantaId: string) => ObservacionAuditor[];
+  getMaterialesByPlanta: (plantaId: string) => MaterialActivo[];
   // Mutations
   addJornada: (jornada: Jornada) => void;
   updateJornada: (id: string, updates: Partial<Jornada>) => void;
@@ -56,43 +88,72 @@ interface AppState {
   updateNC: (id: string, updates: Partial<NoConformidad>) => void;
   addEnsayo: (ensayo: EnsayoCompresion) => void;
   addCondicion: (condicion: CondicionHabilitante) => void;
+  updateCondicion: (id: string, updates: Partial<CondicionHabilitante>) => void;
+  deleteCondicion: (id: string) => void;
   addMolde: (molde: Molde) => void;
+  updateMolde: (id: string, updates: Partial<Molde>) => void;
   addTrabajador: (trabajador: Trabajador) => void;
+  updateTrabajador: (id: string, updates: Partial<Trabajador>) => void;
+  addAuditLog: (entry: AuditLogEntry) => void;
+  addObservacion: (obs: ObservacionAuditor) => void;
+  addMaterial: (material: MaterialActivo) => void;
+  updateMaterial: (id: string, updates: Partial<MaterialActivo>) => void;
 }
 
 const AppContext = createContext<AppState | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [currentRole, setCurrentRole] = useState<RolUsuario>('encargado_calidad');
-  const currentFabricaId = 'fab-tmc';
-  const currentUser = MOCK_USUARIOS.find(u => u.rol === currentRole && (u.fabrica_id === currentFabricaId || u.rol === 'auditor')) || null;
-
-  const [fabricas] = useState<Fabrica[]>(MOCK_FABRICAS);
+  // Datos estáticos (no cambian en runtime, no necesitan persistencia)
+  const [empresas] = useState<Empresa[]>(MOCK_EMPRESAS);
+  const [plantas] = useState<Planta[]>(MOCK_PLANTAS);
   const [usuarios] = useState<Usuario[]>(MOCK_USUARIOS);
-  const [moldes, setMoldes] = useState<Molde[]>(MOCK_MOLDES);
-  const [trabajadores, setTrabajadores] = useState<Trabajador[]>(MOCK_TRABAJADORES);
-  const [condiciones, setCondiciones] = useState<CondicionHabilitante[]>(MOCK_CONDICIONES);
-  const [jornadas, setJornadas] = useState<Jornada[]>(MOCK_JORNADAS);
-  const [verificaciones, setVerificaciones] = useState<VerificacionFabricacion[]>(MOCK_VERIFICACIONES);
-  const [desmoldes, setDesmoldes] = useState<RegistroDesmolde[]>(MOCK_DESMOLDES);
-  const [productoTerminado, setProductoTerminado] = useState<RegistroProductoTerminado[]>(MOCK_PRODUCTO_TERMINADO);
-  const [noConformidades, setNC] = useState<NoConformidad[]>(MOCK_NC);
+
+  // Datos operacionales — inicializan desde localStorage si existe, sino desde mock-data
+  const [moldes, setMoldes] = useState<Molde[]>(() => fromStorage('moldes', MOCK_MOLDES));
+  const [trabajadores, setTrabajadores] = useState<Trabajador[]>(() => fromStorage('trabajadores', MOCK_TRABAJADORES));
+  const [condiciones, setCondiciones] = useState<CondicionHabilitante[]>(() => fromStorage('condiciones', MOCK_CONDICIONES));
+  const [materiales, setMateriales] = useState<MaterialActivo[]>(() => fromStorage('materiales', MOCK_MATERIALES));
+  const [jornadas, setJornadas] = useState<Jornada[]>(() => fromStorage('jornadas', MOCK_JORNADAS));
+  const [verificaciones, setVerificaciones] = useState<VerificacionFabricacion[]>(() => fromStorage('verificaciones', MOCK_VERIFICACIONES));
+  const [desmoldes, setDesmoldes] = useState<RegistroDesmolde[]>(() => fromStorage('desmoldes', MOCK_DESMOLDES));
+  const [productoTerminado, setProductoTerminado] = useState<RegistroProductoTerminado[]>(() => fromStorage('productoTerminado', MOCK_PRODUCTO_TERMINADO));
+  const [noConformidades, setNC] = useState<NoConformidad[]>(() => fromStorage('noConformidades', MOCK_NC));
   const [accionesCorrectivas] = useState<AccionCorrectiva[]>(MOCK_AC);
-  const [ensayos, setEnsayos] = useState<EnsayoCompresion[]>(MOCK_ENSAYOS);
+  const [ensayos, setEnsayos] = useState<EnsayoCompresion[]>(() => fromStorage('ensayos', MOCK_ENSAYOS));
+  const [auditLog, setAuditLog] = useState<AuditLogEntry[]>(() => fromStorage('auditLog', []));
+  const [observaciones, setObservaciones] = useState<ObservacionAuditor[]>(() => fromStorage('observaciones', []));
+
+  // Persistir automáticamente cada colección cuando cambia
+  useEffect(() => { toStorage('moldes', moldes); }, [moldes]);
+  useEffect(() => { toStorage('trabajadores', trabajadores); }, [trabajadores]);
+  useEffect(() => { toStorage('condiciones', condiciones); }, [condiciones]);
+  useEffect(() => { toStorage('materiales', materiales); }, [materiales]);
+  useEffect(() => { toStorage('jornadas', jornadas); }, [jornadas]);
+  useEffect(() => { toStorage('verificaciones', verificaciones); }, [verificaciones]);
+  useEffect(() => { toStorage('desmoldes', desmoldes); }, [desmoldes]);
+  useEffect(() => { toStorage('productoTerminado', productoTerminado); }, [productoTerminado]);
+  useEffect(() => { toStorage('noConformidades', noConformidades); }, [noConformidades]);
+  useEffect(() => { toStorage('ensayos', ensayos); }, [ensayos]);
+  useEffect(() => { toStorage('auditLog', auditLog); }, [auditLog]);
+  useEffect(() => { toStorage('observaciones', observaciones); }, [observaciones]);
 
   // Helpers
-  const getFabrica = useCallback((id: string) => fabricas.find(f => f.id === id), [fabricas]);
+  const getEmpresa = useCallback((id: string) => empresas.find(e => e.id === id), [empresas]);
+  const getPlanta = useCallback((id: string) => plantas.find(p => p.id === id), [plantas]);
+  const getPlantasByEmpresa = useCallback((eId: string) => plantas.filter(p => p.empresa_id === eId), [plantas]);
   const getJornada = useCallback((id: string) => jornadas.find(j => j.id === id), [jornadas]);
-  const getJornadasByFabrica = useCallback((fId: string) => jornadas.filter(j => j.fabrica_id === fId), [jornadas]);
+  const getJornadasByPlanta = useCallback((pId: string) => jornadas.filter(j => j.planta_id === pId), [jornadas]);
   const getVerificacionesByJornada = useCallback((jId: string) => verificaciones.filter(v => v.jornada_id === jId), [verificaciones]);
   const getDesmoldeByJornada = useCallback((jId: string) => desmoldes.find(d => d.jornada_id === jId), [desmoldes]);
   const getProductoTerminadoByJornada = useCallback((jId: string) => productoTerminado.find(pt => pt.jornada_id === jId), [productoTerminado]);
-  const getNCByFabrica = useCallback((fId: string) => noConformidades.filter(nc => nc.fabrica_id === fId), [noConformidades]);
+  const getNCByPlanta = useCallback((pId: string) => noConformidades.filter(nc => nc.planta_id === pId), [noConformidades]);
   const getNCByJornada = useCallback((jId: string) => noConformidades.filter(nc => nc.jornada_id === jId), [noConformidades]);
-  const getCondicionesByFabrica = useCallback((fId: string) => condiciones.filter(c => c.fabrica_id === fId), [condiciones]);
-  const getEnsayosByFabrica = useCallback((fId: string) => ensayos.filter(e => e.fabrica_id === fId), [ensayos]);
-  const getMoldesByFabrica = useCallback((fId: string) => moldes.filter(m => m.fabrica_id === fId), [moldes]);
-  const getTrabajadoresByFabrica = useCallback((fId: string) => trabajadores.filter(t => t.fabrica_id === fId), [trabajadores]);
+  const getCondicionesByPlanta = useCallback((pId: string) => condiciones.filter(c => c.planta_id === pId), [condiciones]);
+  const getEnsayosByPlanta = useCallback((pId: string) => ensayos.filter(e => e.planta_id === pId), [ensayos]);
+  const getMoldesByPlanta = useCallback((pId: string) => moldes.filter(m => m.planta_id === pId), [moldes]);
+  const getTrabajadoresByPlanta = useCallback((pId: string) => trabajadores.filter(t => t.planta_id === pId), [trabajadores]);
+  const getObservacionesByPlanta = useCallback((pId: string) => observaciones.filter(o => o.planta_id === pId), [observaciones]);
+  const getMaterialesByPlanta = useCallback((pId: string) => materiales.filter(m => m.planta_id === pId), [materiales]);
 
   // Mutations
   const addJornada = useCallback((j: Jornada) => setJornadas(prev => [j, ...prev]), []);
@@ -106,21 +167,33 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setNC(prev => prev.map(nc => nc.id === id ? { ...nc, ...updates } : nc)), []);
   const addEnsayo = useCallback((e: EnsayoCompresion) => setEnsayos(prev => [...prev, e]), []);
   const addCondicion = useCallback((c: CondicionHabilitante) => setCondiciones(prev => [...prev, c]), []);
+  const updateCondicion = useCallback((id: string, updates: Partial<CondicionHabilitante>) =>
+    setCondiciones(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c)), []);
+  const deleteCondicion = useCallback((id: string) => setCondiciones(prev => prev.filter(c => c.id !== id)), []);
   const addMolde = useCallback((m: Molde) => setMoldes(prev => [...prev, m]), []);
+  const updateMolde = useCallback((id: string, updates: Partial<Molde>) =>
+    setMoldes(prev => prev.map(m => m.id === id ? { ...m, ...updates } : m)), []);
   const addTrabajador = useCallback((t: Trabajador) => setTrabajadores(prev => [...prev, t]), []);
+  const updateTrabajador = useCallback((id: string, updates: Partial<Trabajador>) =>
+    setTrabajadores(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t)), []);
+  const addAuditLog = useCallback((entry: AuditLogEntry) => setAuditLog(prev => [entry, ...prev]), []);
+  const addObservacion = useCallback((obs: ObservacionAuditor) => setObservaciones(prev => [obs, ...prev]), []);
+  const addMaterial = useCallback((m: MaterialActivo) => setMateriales(prev => [m, ...prev]), []);
+  const updateMaterial = useCallback((id: string, updates: Partial<MaterialActivo>) =>
+    setMateriales(prev => prev.map(m => m.id === id ? { ...m, ...updates } : m)), []);
 
   const value: AppState = {
-    currentUser, currentRole, currentFabricaId, setRole: setCurrentRole,
-    fabricas, usuarios, moldes, trabajadores, condiciones,
+    empresas, plantas, usuarios, moldes, trabajadores, condiciones, materiales,
     jornadas, verificaciones, desmoldes, productoTerminado,
-    noConformidades, accionesCorrectivas, ensayos,
-    getFabrica, getJornada, getJornadasByFabrica,
+    noConformidades, accionesCorrectivas, ensayos, auditLog, observaciones,
+    getEmpresa, getPlanta, getPlantasByEmpresa, getJornada, getJornadasByPlanta,
     getVerificacionesByJornada, getDesmoldeByJornada, getProductoTerminadoByJornada,
-    getNCByFabrica, getNCByJornada, getCondicionesByFabrica,
-    getEnsayosByFabrica, getMoldesByFabrica, getTrabajadoresByFabrica,
+    getNCByPlanta, getNCByJornada, getCondicionesByPlanta,
+    getEnsayosByPlanta, getMoldesByPlanta, getTrabajadoresByPlanta, getObservacionesByPlanta, getMaterialesByPlanta,
     addJornada, updateJornada, addVerificacion, addDesmolde,
     addProductoTerminado, addNC, updateNC, addEnsayo,
-    addCondicion, addMolde, addTrabajador,
+    addCondicion, updateCondicion, deleteCondicion, addMolde, updateMolde, addTrabajador, updateTrabajador,
+    addAuditLog, addObservacion, addMaterial, updateMaterial,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

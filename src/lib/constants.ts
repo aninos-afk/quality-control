@@ -1,4 +1,4 @@
-import type { TipoPoste, TipoDefecto, DisposicionPNC, MedidaProteccion, MetodoCurado, TipoCondicion } from './types';
+import type { TipoPoste, TipoDefecto, DisposicionPNC, MedidaProteccion, MetodoCurado, TipoCondicion, TipoMaterial } from './types';
 
 // =============================================
 // PUNTOS DE VERIFICACIÓN (Doc 03 §8.2)
@@ -109,3 +109,12 @@ export const DESTINOS_LABELS: Record<string, string> = {
   otro_cliente: 'Otro cliente',
   stock: 'Stock',
 };
+
+export const TIPOS_MATERIAL: { value: TipoMaterial; label: string; icon: string }[] = [
+  { value: 'cemento', label: 'Cemento', icon: '🧱' },
+  { value: 'aridos', label: 'Áridos', icon: '⚙️' },
+  { value: 'acero', label: 'Acero', icon: '🔩' },
+  { value: 'aditivo', label: 'Aditivo', icon: '💧' },
+];
+
+export const RANGO_CONO_ABRAMS = { min: 10, max: 20, unidad: 'mm' } as const;
