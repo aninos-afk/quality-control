@@ -75,7 +75,7 @@ const PERMISOS_POR_ROL: Record<RolUsuario, Accion[]> = {
   encargado_patio: [
     'ver_jornadas', 'crear_jornada',
     'verificar_fabricacion', 'registrar_desmolde', 'registrar_producto_terminado',
-    'ver_nc', 'crear_nc',
+    'ver_nc',
     'gestionar_materiales',
   ],
 };

@@ -17,7 +17,6 @@ const NAV_FULL = [
 const NAV_PATIO = [
   { href: '/fabrica/jornadas', label: 'Registro Diario', icon: '📅' },
   { href: '/fabrica', label: 'Inspecciones', icon: '📋' },
-  { href: '/fabrica/no-conformidades', label: 'No Conformidades', icon: '⚠️' },
 ];
 
 export default function FabricaLayout({ children }: { children: React.ReactNode }) {

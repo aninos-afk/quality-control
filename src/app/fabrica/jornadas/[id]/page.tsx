@@ -76,11 +76,22 @@ export default function JornadaDetallePage({ params }: Props) {
 
   const getWorkerNames = (ids: string[]) => ids.map(id => trabajadores.find(t => t.id === id)?.nombre || id).join(', ');
 
+  const tieneHallazgos = productoTerminado && (productoTerminado.nc_detectadas || productoTerminado.resultado === 'no_conforme');
+  const ncsAbiertas = ncs.filter(nc => nc.estado === 'abierta');
+
+  const ptDesc = productoTerminado
+    ? [
+        `${productoTerminado.fecha}`,
+        productoTerminado.resultado === 'conforme' ? 'Conforme' : 'No conforme',
+        productoTerminado.nc_detectadas ? '⚠️ Requiere revisión' : '',
+      ].filter(Boolean).join(' — ')
+    : '';
+
   const steps = [
     { num: 1, label: 'Jornada', desc: `${jornada.temperatura}°C | ${jornada.humedad_relativa}% HR | Cemento: ${jornada.lote_cemento}`, href: null },
     { num: 2, label: 'Verificación', desc: verificaciones.length > 0 ? verificaciones.map(v => `${v.tipo_poste}: ${v.resultado === 'conforme' ? 'Conforme' : 'No conforme'}`).join(' | ') : '', href: `/fabrica/jornadas/${id}/verificacion` },
-    { num: 3, label: 'Desmolde', desc: desmolde ? `${desmolde.fecha} — ${desmolde.defectos_detectados ? 'Con defectos' : 'Sin defectos'}` : '', href: `/fabrica/jornadas/${id}/desmolde` },
-    { num: 4, label: 'Producto terminado', desc: productoTerminado ? `${productoTerminado.fecha} — ${productoTerminado.resultado === 'conforme' ? 'Conforme' : 'No conforme'}` : '', href: `/fabrica/jornadas/${id}/terminado` },
+    { num: 3, label: 'Desmolde', desc: desmolde ? `${desmolde.fecha} — ${desmolde.defectos_detectados ? 'Con defectos corregidos' : 'Sin defectos'}` : '', href: `/fabrica/jornadas/${id}/desmolde` },
+    { num: 4, label: 'Producto terminado', desc: ptDesc, href: `/fabrica/jornadas/${id}/terminado` },
   ];
 
   return (
@@ -109,7 +120,7 @@ export default function JornadaDetallePage({ params }: Props) {
               {jornada.visible_externo ? '👁️ Visible al auditor' : '🔒 Solo interno'}
             </button>
           )}
-          {can('liberar_producto') && jornada.estado === 'producto_terminado' && (
+          {can('liberar_producto') && jornada.estado === 'producto_terminado' && !tieneHallazgos && ncsAbiertas.length === 0 && (
             <Button size="sm" className="bg-status-green hover:bg-status-green/90 text-white" onClick={handleLiberar}>
               ✅ Liberar Jornada
             </Button>
@@ -155,6 +166,60 @@ export default function JornadaDetallePage({ params }: Props) {
           );
         })}
       </div>
+
+      {/* Hallazgos pendientes de revisión */}
+      {jornada.estado === 'producto_terminado' && tieneHallazgos && (
+        <Card className="bg-status-yellow/5 border-status-yellow/20">
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-start gap-3">
+              <span className="text-xl">⚠️</span>
+              <div className="space-y-1">
+                <h3 className="text-sm font-semibold text-status-yellow">Hallazgos pendientes de revisión</h3>
+                <p className="text-xs text-muted-foreground">
+                  El encargado de patio reportó hallazgos en esta jornada que requieren su revisión.
+                </p>
+                {productoTerminado?.resultado === 'no_conforme' && (
+                  <p className="text-xs text-status-red">Resultado de inspección: No Conforme (puntos NC detectados)</p>
+                )}
+                {productoTerminado?.nc_detectadas && (
+                  <p className="text-xs text-status-yellow">El operador solicitó revisión de Jefatura/Calidad</p>
+                )}
+                {productoTerminado?.observaciones && (
+                  <div className="mt-2 p-2 rounded-lg bg-muted/20 border border-border/30">
+                    <p className="text-xs text-muted-foreground">Observaciones del operador:</p>
+                    <p className="text-sm mt-0.5 italic">"{productoTerminado.observaciones}"</p>
+                  </div>
+                )}
+              </div>
+            </div>
+            {can('liberar_producto') && (
+              <div className="flex items-center gap-2 pt-2 border-t border-status-yellow/20">
+                <Button size="sm" variant="outline" className="text-xs border-status-yellow/30 text-status-yellow hover:bg-status-yellow/10" onClick={handleLiberar}>
+                  Liberar sin NC (hallazgo menor)
+                </Button>
+                <span className="text-[10px] text-muted-foreground">o cree una NC formal desde el módulo de No Conformidades</span>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* NC abiertas bloqueando liberación */}
+      {jornada.estado === 'producto_terminado' && ncsAbiertas.length > 0 && (
+        <Card className="bg-status-red/5 border-status-red/20">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <span className="text-xl">🚫</span>
+              <div>
+                <h3 className="text-sm font-semibold text-status-red">Liberación bloqueada</h3>
+                <p className="text-xs text-muted-foreground">
+                  Existen {ncsAbiertas.length} No Conformidad(es) abierta(s) vinculada(s). Deben cerrarse antes de liberar.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Separator />
 

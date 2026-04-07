@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/lib/store';
@@ -17,10 +17,20 @@ type ViewMode = 'calendario' | 'lista';
 export default function JornadasPage() {
   const router = useRouter();
   const { planta, can } = useAuth();
-  const { getJornadasByPlanta, updateJornada } = useApp();
+  const { getJornadasByPlanta, updateJornada, productoTerminado } = useApp();
   const jornadas = getJornadasByPlanta(planta?.id || '').sort((a, b) => b.fecha.localeCompare(a.fecha));
   const [view, setView] = useState<ViewMode>('calendario');
   const canToggleVis = can('toggle_visible_externo');
+
+  // Jornadas en estado producto_terminado con hallazgos pendientes
+  const hallazgosSet = useMemo(() => {
+    const set = new Set<string>();
+    jornadas.filter(j => j.estado === 'producto_terminado').forEach(j => {
+      const pt = productoTerminado.find(p => p.jornada_id === j.id);
+      if (pt && (pt.nc_detectadas || pt.resultado === 'no_conforme')) set.add(j.id);
+    });
+    return set;
+  }, [jornadas, productoTerminado]);
 
   return (
     <div className="space-y-6">
@@ -63,6 +73,7 @@ export default function JornadasPage() {
           onDayClick={(jornada) => router.push(`/fabrica/jornadas/${jornada.id}`)}
           canToggleVisibility={canToggleVis}
           onToggleVisibility={(id, nuevoEstado) => updateJornada(id, { visible_externo: nuevoEstado })}
+          jornadasConHallazgos={hallazgosSet}
         />
       ) : (
         <div className="space-y-3">

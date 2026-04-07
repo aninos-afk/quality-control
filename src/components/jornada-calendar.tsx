@@ -10,6 +10,7 @@ interface JornadaCalendarProps {
   onDayClick?: (jornada: Jornada) => void;
   canToggleVisibility?: boolean;
   onToggleVisibility?: (jornadaId: string, nuevoEstado: boolean) => void;
+  jornadasConHallazgos?: Set<string>;
 }
 
 const DIAS_SEMANA = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
@@ -35,7 +36,7 @@ function getMonday(date: Date): Date {
   return d;
 }
 
-export function JornadaCalendar({ jornadas, onDayClick, canToggleVisibility, onToggleVisibility }: JornadaCalendarProps) {
+export function JornadaCalendar({ jornadas, onDayClick, canToggleVisibility, onToggleVisibility, jornadasConHallazgos }: JornadaCalendarProps) {
   const [year, setYear] = useState(new Date().getFullYear());
   const [month, setMonth] = useState(new Date().getMonth());
 
@@ -139,6 +140,10 @@ export function JornadaCalendar({ jornadas, onDayClick, canToggleVisibility, onT
                     <div className="flex items-center gap-1">
                       <span className={cn('w-2 h-2 rounded-full shrink-0', colors.dot)} />
                       <span className="text-[10px] font-medium truncate flex-1">{jornada.codigo}</span>
+                      {/* Hallazgos pendientes indicator */}
+                      {jornadasConHallazgos?.has(jornada.id) && (
+                        <span className="shrink-0 text-[9px] leading-none text-status-yellow" title="Hallazgos pendientes de revisión">⚠️</span>
+                      )}
                       {/* Visibility icon for cerrada jornadas */}
                       {jornada.estado === 'cerrada' && canToggleVisibility && (
                         <button
