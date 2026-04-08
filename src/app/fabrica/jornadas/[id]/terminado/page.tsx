@@ -137,7 +137,24 @@ export default function ProductoTerminadoPage({ params }: Props) {
 
       <Card className="bg-card/50 border-border/50">
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">Verificaci&oacute;n de Producto Terminado (6 puntos)</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base">Verificaci&oacute;n de Producto Terminado (6 puntos)</CardTitle>
+            <button
+              onClick={() => {
+                const updated: Record<string, PuntoVerificacion> = { ...puntos };
+                PUNTOS_PRODUCTO_TERMINADO.forEach(p => { updated[p.id] = 'C'; });
+                setPuntos(updated);
+              }}
+              className={cn(
+                'px-3 py-1.5 rounded-lg text-xs font-medium border transition-all duration-200 flex items-center gap-1.5',
+                Object.values(puntos).every(v => v === 'C')
+                  ? 'bg-status-green/15 border-status-green/30 text-status-green'
+                  : 'bg-card border-border/50 hover:bg-status-green/10 hover:border-status-green/30 hover:text-status-green text-muted-foreground'
+              )}
+            >
+              {Object.values(puntos).every(v => v === 'C') ? '✓' : '☐'} Cumple los 6
+            </button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-1">
           {PUNTOS_PRODUCTO_TERMINADO.map((punto, idx) => (

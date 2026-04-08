@@ -91,28 +91,31 @@ export const MOCK_MOLDES: Molde[] = [
   { id: 'mol-3', planta_id: 'plt-tmc', numero: 'M-003', tipo_poste: '10-600', activo: true },
   { id: 'mol-4', planta_id: 'plt-tmc', numero: 'M-004', tipo_poste: '10-600', activo: true },
   { id: 'mol-5', planta_id: 'plt-tmc', numero: 'M-005', tipo_poste: '11.5-1000', activo: true },
-  { id: 'mol-6', planta_id: 'plt-prl', numero: 'M-001', tipo_poste: '10-350', activo: true },
-  { id: 'mol-7', planta_id: 'plt-prl', numero: 'M-002', tipo_poste: '10-600', activo: true },
-  { id: 'mol-8', planta_id: 'plt-hbl', numero: 'M-001', tipo_poste: '8.70-350', activo: true },
-  { id: 'mol-9', planta_id: 'plt-hbl', numero: 'M-002', tipo_poste: '10-600', activo: true },
-  { id: 'mol-10', planta_id: 'plt-fco', numero: 'M-001', tipo_poste: '10-350', activo: true },
-  { id: 'mol-11', planta_id: 'plt-fco', numero: 'M-002', tipo_poste: '11.5-1000', activo: true },
+  { id: 'mol-6', planta_id: 'plt-tmc', numero: 'M-006', tipo_poste: '11.5-600', activo: true },
+  { id: 'mol-7', planta_id: 'plt-tmc', numero: 'M-007', tipo_poste: '13.5-1000', activo: true },
+  { id: 'mol-8', planta_id: 'plt-tmc', numero: 'M-008', tipo_poste: '13.5-1000', activo: true },
+  { id: 'mol-9', planta_id: 'plt-prl', numero: 'M-001', tipo_poste: '10-350', activo: true },
+  { id: 'mol-10', planta_id: 'plt-prl', numero: 'M-002', tipo_poste: '10-600', activo: true },
+  { id: 'mol-11', planta_id: 'plt-hbl', numero: 'M-001', tipo_poste: '8.70-350', activo: true },
+  { id: 'mol-12', planta_id: 'plt-hbl', numero: 'M-002', tipo_poste: '10-600', activo: true },
+  { id: 'mol-13', planta_id: 'plt-fco', numero: 'M-001', tipo_poste: '10-350', activo: true },
+  { id: 'mol-14', planta_id: 'plt-fco', numero: 'M-002', tipo_poste: '11.5-1000', activo: true },
   // HORMISUR Osorno
-  { id: 'mol-12', planta_id: 'plt-osr', numero: 'M-001', tipo_poste: '10-600', activo: true },
-  { id: 'mol-13', planta_id: 'plt-osr', numero: 'M-002', tipo_poste: '11.5-1000', activo: true },
-  { id: 'mol-14', planta_id: 'plt-osr', numero: 'M-003', tipo_poste: '10-600', activo: true },
+  { id: 'mol-15', planta_id: 'plt-osr', numero: 'M-001', tipo_poste: '10-600', activo: true },
+  { id: 'mol-16', planta_id: 'plt-osr', numero: 'M-002', tipo_poste: '11.5-1000', activo: true },
+  { id: 'mol-17', planta_id: 'plt-osr', numero: 'M-003', tipo_poste: '10-600', activo: true },
   // HORMIBAL Frutillar
-  { id: 'mol-15', planta_id: 'plt-frt', numero: 'M-001', tipo_poste: '10-600', activo: true },
-  { id: 'mol-16', planta_id: 'plt-frt', numero: 'M-002', tipo_poste: '8.70-350', activo: true },
+  { id: 'mol-18', planta_id: 'plt-frt', numero: 'M-001', tipo_poste: '10-600', activo: true },
+  { id: 'mol-19', planta_id: 'plt-frt', numero: 'M-002', tipo_poste: '8.70-350', activo: true },
   // HORVAL Valdivia
-  { id: 'mol-17', planta_id: 'plt-hvl', numero: 'M-001', tipo_poste: '10-350', activo: true },
-  { id: 'mol-18', planta_id: 'plt-hvl', numero: 'M-002', tipo_poste: '10-600', activo: true },
-  // HORNOR Coyhaique
-  { id: 'mol-19', planta_id: 'plt-hnr', numero: 'M-001', tipo_poste: '8.70-350', activo: true },
-  { id: 'mol-20', planta_id: 'plt-hnr', numero: 'M-002', tipo_poste: '10-600', activo: true },
+  { id: 'mol-20', planta_id: 'plt-hvl', numero: 'M-001', tipo_poste: '10-350', activo: true },
+  { id: 'mol-21', planta_id: 'plt-hvl', numero: 'M-002', tipo_poste: '10-600', activo: true },
+  // HORNOR Coronel
+  { id: 'mol-22', planta_id: 'plt-hnr', numero: 'M-001', tipo_poste: '8.70-350', activo: true },
+  { id: 'mol-23', planta_id: 'plt-hnr', numero: 'M-002', tipo_poste: '10-600', activo: true },
   // FACORO Puerto Varas
-  { id: 'mol-21', planta_id: 'plt-fpa', numero: 'M-001', tipo_poste: '10-350', activo: true },
-  { id: 'mol-22', planta_id: 'plt-fpa', numero: 'M-002', tipo_poste: '10-600', activo: true },
+  { id: 'mol-24', planta_id: 'plt-fpa', numero: 'M-001', tipo_poste: '10-350', activo: true },
+  { id: 'mol-25', planta_id: 'plt-fpa', numero: 'M-002', tipo_poste: '10-600', activo: true },
 ];
 
 // =============================================
@@ -612,7 +615,7 @@ export const MOCK_VERIFICACIONES: VerificacionFabricacion[] = [
   },
   // Hormibal LA jrn-11
   {
-    id: 'ver-5', jornada_id: 'jrn-11', tipo_poste: '8.70-350', molde_id: 'mol-8', codigo_elemento: 'HBL-260328-01',
+    id: 'ver-5', jornada_id: 'jrn-11', tipo_poste: '8.70-350', molde_id: 'mol-11', codigo_elemento: 'HBL-260328-01',
     arm_diametro_cantidades: 'C', arm_fierros_segun_plano: 'C', arm_dimensiones_fierros: 'C',
     arm_distanciamiento_estribos: 'C', arm_union_alambres: 'C', arm_sin_oxido: 'C', arm_ducto_puesta_tierra: 'C',
     mol_pernos_candados: 'C', mol_apuntalamiento: 'C', mol_estanqueidad: 'C',
@@ -623,7 +626,7 @@ export const MOCK_VERIFICACIONES: VerificacionFabricacion[] = [
   },
   // Hormibal Frutillar jrn-12
   {
-    id: 'ver-6', jornada_id: 'jrn-12', tipo_poste: '10-600', molde_id: 'mol-15', codigo_elemento: 'FRT-260327-01',
+    id: 'ver-6', jornada_id: 'jrn-12', tipo_poste: '10-600', molde_id: 'mol-18', codigo_elemento: 'FRT-260327-01',
     arm_diametro_cantidades: 'C', arm_fierros_segun_plano: 'C', arm_dimensiones_fierros: 'C',
     arm_distanciamiento_estribos: 'C', arm_union_alambres: 'C', arm_sin_oxido: 'C', arm_ducto_puesta_tierra: 'C',
     mol_pernos_candados: 'C', mol_apuntalamiento: 'C', mol_estanqueidad: 'C',
@@ -634,7 +637,7 @@ export const MOCK_VERIFICACIONES: VerificacionFabricacion[] = [
   },
   // Facoro Angol jrn-13
   {
-    id: 'ver-7', jornada_id: 'jrn-13', tipo_poste: '10-350', molde_id: 'mol-10', codigo_elemento: 'FCO-260329-01',
+    id: 'ver-7', jornada_id: 'jrn-13', tipo_poste: '10-350', molde_id: 'mol-13', codigo_elemento: 'FCO-260329-01',
     arm_diametro_cantidades: 'C', arm_fierros_segun_plano: 'C', arm_dimensiones_fierros: 'C',
     arm_distanciamiento_estribos: 'C', arm_union_alambres: 'C', arm_sin_oxido: 'C', arm_ducto_puesta_tierra: 'C',
     mol_pernos_candados: 'C', mol_apuntalamiento: 'C', mol_estanqueidad: 'C',
@@ -645,7 +648,7 @@ export const MOCK_VERIFICACIONES: VerificacionFabricacion[] = [
   },
   // Facoro Puerto Varas jrn-14
   {
-    id: 'ver-8', jornada_id: 'jrn-14', tipo_poste: '10-600', molde_id: 'mol-22', codigo_elemento: 'FPA-260328-01',
+    id: 'ver-8', jornada_id: 'jrn-14', tipo_poste: '10-600', molde_id: 'mol-25', codigo_elemento: 'FPA-260328-01',
     arm_diametro_cantidades: 'C', arm_fierros_segun_plano: 'C', arm_dimensiones_fierros: 'C',
     arm_distanciamiento_estribos: 'C', arm_union_alambres: 'C', arm_sin_oxido: 'C', arm_ducto_puesta_tierra: 'C',
     mol_pernos_candados: 'C', mol_apuntalamiento: 'C', mol_estanqueidad: 'C',
@@ -656,7 +659,7 @@ export const MOCK_VERIFICACIONES: VerificacionFabricacion[] = [
   },
   // Horval jrn-15
   {
-    id: 'ver-9', jornada_id: 'jrn-15', tipo_poste: '10-350', molde_id: 'mol-17', codigo_elemento: 'HVL-260326-01',
+    id: 'ver-9', jornada_id: 'jrn-15', tipo_poste: '10-350', molde_id: 'mol-20', codigo_elemento: 'HVL-260326-01',
     arm_diametro_cantidades: 'C', arm_fierros_segun_plano: 'C', arm_dimensiones_fierros: 'C',
     arm_distanciamiento_estribos: 'C', arm_union_alambres: 'C', arm_sin_oxido: 'C', arm_ducto_puesta_tierra: 'C',
     mol_pernos_candados: 'C', mol_apuntalamiento: 'C', mol_estanqueidad: 'C',
@@ -667,7 +670,7 @@ export const MOCK_VERIFICACIONES: VerificacionFabricacion[] = [
   },
   // Hornor jrn-16
   {
-    id: 'ver-10', jornada_id: 'jrn-16', tipo_poste: '10-600', molde_id: 'mol-20', codigo_elemento: 'HNR-260324-01',
+    id: 'ver-10', jornada_id: 'jrn-16', tipo_poste: '10-600', molde_id: 'mol-23', codigo_elemento: 'HNR-260324-01',
     arm_diametro_cantidades: 'C', arm_fierros_segun_plano: 'C', arm_dimensiones_fierros: 'C',
     arm_distanciamiento_estribos: 'C', arm_union_alambres: 'C', arm_sin_oxido: 'C', arm_ducto_puesta_tierra: 'C',
     mol_pernos_candados: 'C', mol_apuntalamiento: 'C', mol_estanqueidad: 'C',
@@ -1009,7 +1012,7 @@ export const MOCK_NC: NoConformidad[] = [
   {
     id: 'nc-5', planta_id: 'plt-prl', numero: 'PRL-2026-001', nivel: 'producto', jornada_id: 'jrn-5',
     fecha_deteccion: '2026-03-24', origen: 'desmolde', tipo_poste: '10-600',
-    molde_id: 'mol-7', tipo_defecto: 'fisura_superficial', detalle: 'Fisura superficial en zona de empotramiento',
+    molde_id: 'mol-10', tipo_defecto: 'fisura_superficial', detalle: 'Fisura superficial en zona de empotramiento',
     accion_inmediata: 'Segregación del elemento', disposicion: 'reparar', apto_saesa: false,
     estado: 'abierta', created_by: 'usr-hs-jp2',
   },

@@ -7,6 +7,7 @@ import { ESTADOS_JORNADA_LABELS } from '@/lib/constants';
 
 interface JornadaCalendarProps {
   jornadas: Jornada[];
+  usuarios?: { id: string; nombre: string; rol: string }[];
   onDayClick?: (jornada: Jornada) => void;
   canToggleVisibility?: boolean;
   onToggleVisibility?: (jornadaId: string, nuevoEstado: boolean) => void;
@@ -36,7 +37,7 @@ function getMonday(date: Date): Date {
   return d;
 }
 
-export function JornadaCalendar({ jornadas, onDayClick, canToggleVisibility, onToggleVisibility, jornadasConHallazgos }: JornadaCalendarProps) {
+export function JornadaCalendar({ jornadas, usuarios, onDayClick, canToggleVisibility, onToggleVisibility, jornadasConHallazgos }: JornadaCalendarProps) {
   const [year, setYear] = useState(new Date().getFullYear());
   const [month, setMonth] = useState(new Date().getMonth());
 
@@ -195,6 +196,12 @@ export function JornadaCalendar({ jornadas, onDayClick, canToggleVisibility, onT
                         <span>{jornada.visible_externo ? 'Visible al auditor externo' : 'Solo uso interno'}</span>
                       </div>
                     )}
+                    {jornada.created_by && usuarios && (() => {
+                      const u = usuarios.find(u => u.id === jornada.created_by);
+                      return u ? (
+                        <div className="text-muted-foreground/50 italic pt-0.5">por {u.nombre}</div>
+                      ) : null;
+                    })()}
                   </div>
                 )}
               </div>

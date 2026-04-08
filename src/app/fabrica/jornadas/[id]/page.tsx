@@ -17,7 +17,7 @@ interface Props {
 
 export default function JornadaDetallePage({ params }: Props) {
   const { id } = use(params);
-  const { getJornada, getVerificacionesByJornada, getDesmoldeByJornada, getProductoTerminadoByJornada, getNCByJornada, trabajadores, updateJornada, addAuditLog } = useApp();
+  const { getJornada, getVerificacionesByJornada, getDesmoldeByJornada, getProductoTerminadoByJornada, getNCByJornada, trabajadores, moldes, usuarios, updateJornada, addAuditLog } = useApp();
   const { user, can } = useAuth();
   const router = useRouter();
 
@@ -76,6 +76,20 @@ export default function JornadaDetallePage({ params }: Props) {
 
   const getWorkerNames = (ids: string[]) => ids.map(id => trabajadores.find(t => t.id === id)?.nombre || id).join(', ');
 
+  const ROL_LABELS: Record<string, string> = {
+    jefe_planta: 'Jefe de Planta',
+    encargado_calidad: 'Enc. Calidad',
+    encargado_patio: 'Enc. Patio',
+    auditor_externo: 'Auditor',
+    auditor_plataforma: 'Admin',
+  };
+  const getUserLabel = (userId?: string) => {
+    if (!userId) return null;
+    const u = usuarios.find(u => u.id === userId);
+    if (!u) return null;
+    return `${u.nombre} (${ROL_LABELS[u.rol] || u.rol})`;
+  };
+
   const tieneHallazgos = productoTerminado && (productoTerminado.nc_detectadas || productoTerminado.resultado === 'no_conforme');
   const ncsAbiertas = ncs.filter(nc => nc.estado === 'abierta');
 
@@ -87,11 +101,23 @@ export default function JornadaDetallePage({ params }: Props) {
       ].filter(Boolean).join(' — ')
     : '';
 
+  const verCreatedBy = verificaciones.length > 0 ? getUserLabel(verificaciones[0].created_by) : null;
+  const desCreatedBy = desmolde ? getUserLabel(desmolde.created_by) : null;
+  const ptCreatedBy = productoTerminado ? getUserLabel(productoTerminado.created_by) : null;
+  const jrnCreatedBy = getUserLabel(jornada.created_by);
+
   const steps = [
-    { num: 1, label: 'Jornada', desc: `${jornada.temperatura}°C | ${jornada.humedad_relativa}% HR | Cemento: ${jornada.lote_cemento}`, href: null },
-    { num: 2, label: 'Verificación', desc: verificaciones.length > 0 ? verificaciones.map(v => `${v.tipo_poste}: ${v.resultado === 'conforme' ? 'Conforme' : 'No conforme'}`).join(' | ') : '', href: `/fabrica/jornadas/${id}/verificacion` },
-    { num: 3, label: 'Desmolde', desc: desmolde ? `${desmolde.fecha} — ${desmolde.defectos_detectados ? 'Con defectos corregidos' : 'Sin defectos'}` : '', href: `/fabrica/jornadas/${id}/desmolde` },
-    { num: 4, label: 'Producto terminado', desc: ptDesc, href: `/fabrica/jornadas/${id}/terminado` },
+    { num: 1, label: 'Jornada', desc: `${jornada.temperatura}°C | ${jornada.humedad_relativa}% HR | Cemento: ${jornada.lote_cemento}`, href: null, createdBy: jrnCreatedBy },
+    { num: 2, label: 'Verificación', desc: verificaciones.length > 0 ? verificaciones.map(v => {
+      const molde = v.molde_id ? moldes.find((m: { id: string; numero: string }) => m.id === v.molde_id) : null;
+      const parts: string[] = [v.tipo_poste];
+      if (molde) parts.push(molde.numero);
+      if (v.codigo_elemento) parts.push(v.codigo_elemento);
+      parts.push(v.resultado === 'conforme' ? 'Conforme' : 'No conforme');
+      return parts.join(' · ');
+    }).join(' | ') : '', href: `/fabrica/jornadas/${id}/verificacion`, createdBy: verCreatedBy },
+    { num: 3, label: 'Desmolde', desc: desmolde ? `${desmolde.fecha} — ${desmolde.defectos_detectados ? 'Con defectos corregidos' : 'Sin defectos'}` : '', href: `/fabrica/jornadas/${id}/desmolde`, createdBy: desCreatedBy },
+    { num: 4, label: 'Producto terminado', desc: ptDesc, href: `/fabrica/jornadas/${id}/terminado`, createdBy: ptCreatedBy },
   ];
 
   return (
@@ -151,6 +177,9 @@ export default function JornadaDetallePage({ params }: Props) {
                     <div>
                       <div className="font-medium">Etapa {step.num}: {step.label}</div>
                       {step.desc && <div className="text-xs text-muted-foreground mt-0.5">{step.desc}</div>}
+                      {step.createdBy && status.done && (
+                        <div className="text-[10px] text-muted-foreground/60 mt-0.5 italic">por {step.createdBy}</div>
+                      )}
                     </div>
                   </div>
                   {step.href && !status.locked && (
@@ -239,6 +268,11 @@ export default function JornadaDetallePage({ params }: Props) {
             <div><span className="text-muted-foreground">Hormigonado:</span> <span className="font-medium">{getWorkerNames(jornada.operadores_hormigonado)}</span></div>
             <div><span className="text-muted-foreground">Curado:</span> <span className="font-medium">{getWorkerNames(jornada.operadores_curado)}</span></div>
           </div>
+          {jrnCreatedBy && (
+            <div className="mt-3 pt-3 border-t border-border/30 text-xs text-muted-foreground/60 italic">
+              Creada por {jrnCreatedBy} el {jornada.created_at}
+            </div>
+          )}
         </CardContent>
       </Card>
 

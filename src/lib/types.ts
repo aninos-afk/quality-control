@@ -159,6 +159,18 @@ export interface VerificacionFabricacion {
   tipo_poste: TipoPoste;
   molde_id?: string;
   codigo_elemento?: string;
+  // Override de operadores (si difieren de la jornada)
+  override_operadores?: boolean;
+  operadores_enfierradura?: string[];
+  operadores_moldaje?: string[];
+  operadores_hormigonado?: string[];
+  operadores_curado?: string[];
+  // Override de materiales (si cambiaron durante el dia)
+  override_materiales?: boolean;
+  lote_cemento?: string;
+  partida_aridos?: string;
+  lote_acero?: string;
+  aditivo_detalle?: string;
   // Armadura (7)
   arm_diametro_cantidades: PuntoVerificacion;
   arm_fierros_segun_plano: PuntoVerificacion;

@@ -17,7 +17,7 @@ type ViewMode = 'calendario' | 'lista';
 export default function JornadasPage() {
   const router = useRouter();
   const { planta, can } = useAuth();
-  const { getJornadasByPlanta, updateJornada, productoTerminado } = useApp();
+  const { getJornadasByPlanta, updateJornada, productoTerminado, usuarios } = useApp();
   const jornadas = getJornadasByPlanta(planta?.id || '').sort((a, b) => b.fecha.localeCompare(a.fecha));
   const [view, setView] = useState<ViewMode>('calendario');
   const canToggleVis = can('toggle_visible_externo');
@@ -70,6 +70,7 @@ export default function JornadasPage() {
       {view === 'calendario' ? (
         <JornadaCalendar
           jornadas={jornadas}
+          usuarios={usuarios}
           onDayClick={(jornada) => router.push(`/fabrica/jornadas/${jornada.id}`)}
           canToggleVisibility={canToggleVis}
           onToggleVisibility={(id, nuevoEstado) => updateJornada(id, { visible_externo: nuevoEstado })}
@@ -95,6 +96,12 @@ export default function JornadasPage() {
                           <span className="text-xs text-muted-foreground">{DESTINOS_LABELS[j.destino]}</span>
                           <span className="text-xs text-muted-foreground">•</span>
                           <span className="text-xs text-muted-foreground">{j.tipos_poste.join(', ')}</span>
+                          {j.created_by && (() => {
+                            const u = usuarios.find(u => u.id === j.created_by);
+                            return u ? (
+                              <><span className="text-xs text-muted-foreground">•</span><span className="text-[10px] text-muted-foreground/50 italic">por {u.nombre}</span></>
+                            ) : null;
+                          })()}
                         </div>
                       </div>
                     </div>

@@ -20,7 +20,7 @@ import {
 // Versión: incrementar si cambia el schema de datos
 // para forzar reinicio limpio en clientes existentes.
 // =============================================
-const STORAGE_VERSION = 'qc_v5';
+const STORAGE_VERSION = 'qc_v7';
 const SK = (key: string) => `${STORAGE_VERSION}_${key}`;
 
 function fromStorage<T>(key: string, fallback: T): T {
@@ -82,6 +82,7 @@ interface AppState {
   addJornada: (jornada: Jornada) => void;
   updateJornada: (id: string, updates: Partial<Jornada>) => void;
   addVerificacion: (verificacion: VerificacionFabricacion) => void;
+  replaceVerificacionesByJornada: (jornadaId: string, nuevas: VerificacionFabricacion[]) => void;
   addDesmolde: (desmolde: RegistroDesmolde) => void;
   addProductoTerminado: (pt: RegistroProductoTerminado) => void;
   addNC: (nc: NoConformidad) => void;
@@ -160,6 +161,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const updateJornada = useCallback((id: string, updates: Partial<Jornada>) =>
     setJornadas(prev => prev.map(j => j.id === id ? { ...j, ...updates } : j)), []);
   const addVerificacion = useCallback((v: VerificacionFabricacion) => setVerificaciones(prev => [...prev, v]), []);
+  const replaceVerificacionesByJornada = useCallback((jornadaId: string, nuevas: VerificacionFabricacion[]) =>
+    setVerificaciones(prev => [...prev.filter(v => v.jornada_id !== jornadaId), ...nuevas]), []);
   const addDesmolde = useCallback((d: RegistroDesmolde) => setDesmoldes(prev => [...prev, d]), []);
   const addProductoTerminado = useCallback((pt: RegistroProductoTerminado) => setProductoTerminado(prev => [...prev, pt]), []);
   const addNC = useCallback((nc: NoConformidad) => setNC(prev => [...prev, nc]), []);
@@ -190,7 +193,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     getVerificacionesByJornada, getDesmoldeByJornada, getProductoTerminadoByJornada,
     getNCByPlanta, getNCByJornada, getCondicionesByPlanta,
     getEnsayosByPlanta, getMoldesByPlanta, getTrabajadoresByPlanta, getObservacionesByPlanta, getMaterialesByPlanta,
-    addJornada, updateJornada, addVerificacion, addDesmolde,
+    addJornada, updateJornada, addVerificacion, replaceVerificacionesByJornada, addDesmolde,
     addProductoTerminado, addNC, updateNC, addEnsayo,
     addCondicion, updateCondicion, deleteCondicion, addMolde, updateMolde, addTrabajador, updateTrabajador,
     addAuditLog, addObservacion, addMaterial, updateMaterial,
