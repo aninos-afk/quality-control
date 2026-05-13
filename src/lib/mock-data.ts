@@ -15,6 +15,7 @@ export const MOCK_EMPRESAS: Empresa[] = [
   { id: 'emp-horval', nombre: 'HORVAL', slug: 'horval', rut: '76.345.678-9', contacto: 'contacto@horval.cl', created_at: '2026-01-01' },
   { id: 'emp-hornor', nombre: 'HORNOR', slug: 'hornor', rut: '76.456.789-0', contacto: 'contacto@hornor.cl', created_at: '2026-01-01' },
   { id: 'emp-facoro', nombre: 'FACORO', slug: 'facoro', rut: '76.567.890-1', contacto: 'contacto@facoro.cl', created_at: '2026-01-01' },
+  { id: 'emp-racsol', nombre: 'RACSOL', slug: 'racsol', rut: '76.678.901-2', contacto: 'contacto@racsol.cl', created_at: '2026-01-01' },
 ];
 
 // =============================================
@@ -36,6 +37,8 @@ export const MOCK_PLANTAS: Planta[] = [
   // FACORO — 2 plants
   { id: 'plt-fco', empresa_id: 'emp-facoro', nombre: 'Planta Angol', codigo: 'FCO', direccion: 'Angol, Región de La Araucanía', created_at: '2026-01-01' },
   { id: 'plt-fpa', empresa_id: 'emp-facoro', nombre: 'Planta Puerto Varas', codigo: 'FPA', direccion: 'Puerto Varas, Región de Los Lagos', created_at: '2026-01-01' },
+  // RACSOL — 1 plant
+  { id: 'plt-rcl', empresa_id: 'emp-racsol', nombre: 'Planta Coyhaique', codigo: 'RCL', direccion: 'Coyhaique, Región de Aysén', created_at: '2026-01-01' },
 ];
 
 // =============================================
@@ -79,6 +82,11 @@ export const MOCK_USUARIOS: Usuario[] = [
   { id: 'usr-fc-ep1', empresa_id: 'emp-facoro', planta_id: 'plt-fco', nombre: 'Ana Torres', rol: 'encargado_patio', email: 'ana@facoro.cl', password: 'demo1234' },
   { id: 'usr-fc-jp2', empresa_id: 'emp-facoro', planta_id: 'plt-fpa', nombre: 'Fernando Sandoval', rol: 'jefe_planta', email: 'fernando@facoro.cl', password: 'demo1234' },
   { id: 'usr-fc-ep2', empresa_id: 'emp-facoro', planta_id: 'plt-fpa', nombre: 'Lorena Bustos', rol: 'encargado_patio', email: 'lorena@facoro.cl', password: 'demo1234' },
+
+  // RACSOL
+  { id: 'usr-rc-ec', empresa_id: 'emp-racsol', nombre: 'Rodrigo Castillo', rol: 'encargado_calidad', email: 'rodrigo@racsol.cl', password: 'demo1234' },
+  { id: 'usr-rc-jp1', empresa_id: 'emp-racsol', planta_id: 'plt-rcl', nombre: 'Sandra Muñoz', rol: 'jefe_planta', email: 'sandra@racsol.cl', password: 'demo1234' },
+  { id: 'usr-rc-ep1', empresa_id: 'emp-racsol', planta_id: 'plt-rcl', nombre: 'Eduardo Peña', rol: 'encargado_patio', email: 'eduardo@racsol.cl', password: 'demo1234' },
 ];
 
 // =============================================
@@ -116,6 +124,10 @@ export const MOCK_MOLDES: Molde[] = [
   // FACORO Puerto Varas
   { id: 'mol-24', planta_id: 'plt-fpa', numero: 'M-001', tipo_poste: '10-350', activo: true },
   { id: 'mol-25', planta_id: 'plt-fpa', numero: 'M-002', tipo_poste: '10-600', activo: true },
+  // RACSOL Coyhaique
+  { id: 'mol-26', planta_id: 'plt-rcl', numero: 'M-001', tipo_poste: '10-350', activo: true },
+  { id: 'mol-27', planta_id: 'plt-rcl', numero: 'M-002', tipo_poste: '10-600', activo: true },
+  { id: 'mol-28', planta_id: 'plt-rcl', numero: 'M-003', tipo_poste: '8.70-350', activo: true },
 ];
 
 // =============================================
@@ -165,6 +177,10 @@ export const MOCK_MATERIALES: MaterialActivo[] = [
   { id: 'mat-28', planta_id: 'plt-fpa', tipo: 'cemento', codigo_lote: 'CB-FPA-2026-03', proveedor: 'Cementos Melón', descripcion: 'Cemento Portland Puzolánico', fecha_recepcion: '2026-03-06', activo: true, created_by: 'usr-fc-jp2', created_at: '2026-03-06' },
   { id: 'mat-29', planta_id: 'plt-fpa', tipo: 'aridos', codigo_lote: 'AR-FPA-Q1', proveedor: 'Cantera Llanquihue', descripcion: 'Árido grueso y fino', fecha_recepcion: '2026-01-14', activo: true, created_by: 'usr-fc-jp2', created_at: '2026-01-14' },
   { id: 'mat-30', planta_id: 'plt-fpa', tipo: 'acero', codigo_lote: 'AZ-FPA-2026-02', proveedor: 'AZA', descripcion: 'Barras de refuerzo A630-420H', fecha_recepcion: '2026-02-22', activo: true, created_by: 'usr-fc-jp2', created_at: '2026-02-22' },
+  // RACSOL Coyhaique
+  { id: 'mat-31', planta_id: 'plt-rcl', tipo: 'cemento', codigo_lote: 'CB-RCL-2026-04', proveedor: 'Cementos Bío Bío', descripcion: 'Cemento Portland Puzolánico', fecha_recepcion: '2026-04-02', activo: true, created_by: 'usr-rc-jp1', created_at: '2026-04-02' },
+  { id: 'mat-32', planta_id: 'plt-rcl', tipo: 'aridos', codigo_lote: 'AR-RCL-Q2', proveedor: 'Cantera Aysén', descripcion: 'Árido grueso y fino', fecha_recepcion: '2026-04-05', activo: true, created_by: 'usr-rc-jp1', created_at: '2026-04-05' },
+  { id: 'mat-33', planta_id: 'plt-rcl', tipo: 'acero', codigo_lote: 'AZ-RCL-2026-03', proveedor: 'AZA', descripcion: 'Barras de refuerzo A630-420H', fecha_recepcion: '2026-03-28', activo: true, created_by: 'usr-rc-jp1', created_at: '2026-03-28' },
 ];
 
 // =============================================
@@ -201,6 +217,10 @@ export const MOCK_TRABAJADORES: Trabajador[] = [
   // FACORO Puerto Varas
   { id: 'trb-22', planta_id: 'plt-fpa', nombre: 'Miguel Barría', actividades_habilitadas: ['enfierradura', 'moldaje'], fecha_ultima_capacitacion: '2026-01-28', activo: true },
   { id: 'trb-23', planta_id: 'plt-fpa', nombre: 'Verónica Gallardo', actividades_habilitadas: ['hormigonado', 'curado'], fecha_ultima_capacitacion: '2026-03-15', activo: true },
+  // RACSOL Coyhaique
+  { id: 'trb-24', planta_id: 'plt-rcl', nombre: 'Gonzalo Inostroza', actividades_habilitadas: ['enfierradura', 'moldaje', 'hormigonado'], fecha_ultima_capacitacion: '2026-04-10', activo: true },
+  { id: 'trb-25', planta_id: 'plt-rcl', nombre: 'Marisol Vergara', actividades_habilitadas: ['curado', 'moldaje'], fecha_ultima_capacitacion: '2026-04-10', activo: true },
+  { id: 'trb-26', planta_id: 'plt-rcl', nombre: 'Pablo Zúñiga', actividades_habilitadas: ['enfierradura', 'hormigonado'], fecha_ultima_capacitacion: '2026-04-10', activo: true },
 ];
 
 // =============================================
@@ -229,6 +249,11 @@ export const MOCK_CONDICIONES: CondicionHabilitante[] = [
   // HORMISUR Osorno
   { id: 'cond-17', planta_id: 'plt-osr', tipo: 'certificado_mp', descripcion: 'Certificado cemento NCh 148', norma_referencia: 'NCh 148', frecuencia_descripcion: 'Semestral', fecha_emision: '2026-02-10', fecha_vencimiento: '2026-08-10', entidad_emisora: 'Cementos Melón', estado: 'vigente', created_by: 'usr-hs-jp3', created_at: '2026-02-10' },
   { id: 'cond-18', planta_id: 'plt-osr', tipo: 'calibracion', descripcion: 'Calibración planta hormigonera', norma_referencia: 'NCh-ISO 17025', frecuencia_descripcion: 'Anual', fecha_emision: '2025-07-15', fecha_vencimiento: '2026-07-15', entidad_emisora: 'Lab. Metrología Osorno', estado: 'vigente', created_by: 'usr-hs-jp3', created_at: '2025-07-15' },
+  // RACSOL Coyhaique
+  { id: 'cond-19', planta_id: 'plt-rcl', tipo: 'certificado_mp', descripcion: 'Certificado cemento NCh 148', norma_referencia: 'NCh 148', frecuencia_descripcion: 'Semestral', fecha_emision: '2026-03-01', fecha_vencimiento: '2026-09-01', entidad_emisora: 'Cementos Bío Bío', estado: 'vigente', created_by: 'usr-rc-jp1', created_at: '2026-03-01' },
+  { id: 'cond-20', planta_id: 'plt-rcl', tipo: 'certificado_mp', descripcion: 'Certificado acero NCh 204', norma_referencia: 'NCh 204', frecuencia_descripcion: 'Semestral', fecha_emision: '2026-03-15', fecha_vencimiento: '2026-09-15', entidad_emisora: 'AZA', estado: 'vigente', created_by: 'usr-rc-jp1', created_at: '2026-03-15' },
+  { id: 'cond-21', planta_id: 'plt-rcl', tipo: 'calibracion', descripcion: 'Calibración planta hormigonera', norma_referencia: 'NCh-ISO 17025', frecuencia_descripcion: 'Anual', fecha_emision: '2026-01-10', fecha_vencimiento: '2027-01-10', entidad_emisora: 'Lab. Metrología Aysén', estado: 'vigente', created_by: 'usr-rc-ec', created_at: '2026-01-10' },
+  { id: 'cond-22', planta_id: 'plt-rcl', tipo: 'capacitacion', descripcion: 'Capacitación personal: concreteros', frecuencia_descripcion: 'Según programa P905', fecha_emision: '2026-04-10', fecha_vencimiento: '2026-10-10', entidad_emisora: 'Empresa', estado: 'vigente', created_by: 'usr-rc-ec', created_at: '2026-04-10' },
 ];
 
 // =============================================
@@ -800,6 +825,28 @@ export const MOCK_JORNADAS: Jornada[] = [
     cono_abrams_mm: 15, operadores_enfierradura: ['trb-22'], operadores_moldaje: ['trb-23'], operadores_hormigonado: ['trb-22'], operadores_curado: ['trb-23'],
     jefe_planta_id: 'usr-fc-jp2', encargado_calidad_id: 'usr-fc-ec',
     estado: 'cerrada', alertas: [], visible_externo: false, created_by: 'usr-fc-ep2', created_at: '2026-05-10' },
+
+  // =============================================
+  // RACSOL Coyhaique — mayo 2026
+  // =============================================
+  { id: 'jrn-rc01', planta_id: 'plt-rcl', fecha: '2026-05-06', codigo: 'RCL-260506-1',
+    tipos_poste: ['10-350', '10-600'], destino: 'SAESA', temperatura: 11, humedad_relativa: 62,
+    medidas_proteccion: ['ninguna_requerida'], lote_cemento: 'CB-RCL-2026-04', partida_aridos: 'AR-RCL-Q2', lote_acero: 'AZ-RCL-2026-03',
+    cono_abrams_mm: 15, operadores_enfierradura: ['trb-24'], operadores_moldaje: ['trb-25'], operadores_hormigonado: ['trb-24'], operadores_curado: ['trb-25'],
+    jefe_planta_id: 'usr-rc-jp1', encargado_calidad_id: 'usr-rc-ec',
+    estado: 'cerrada', alertas: [], visible_externo: true, created_by: 'usr-rc-ep1', created_at: '2026-05-06' },
+  { id: 'jrn-rc02', planta_id: 'plt-rcl', fecha: '2026-05-12', codigo: 'RCL-260512-1',
+    tipos_poste: ['10-600'], destino: 'SAESA', temperatura: 9, humedad_relativa: 70,
+    medidas_proteccion: ['ninguna_requerida'], lote_cemento: 'CB-RCL-2026-04', partida_aridos: 'AR-RCL-Q2', lote_acero: 'AZ-RCL-2026-03',
+    cono_abrams_mm: 14, operadores_enfierradura: ['trb-26'], operadores_moldaje: ['trb-24'], operadores_hormigonado: ['trb-26'], operadores_curado: ['trb-25'],
+    jefe_planta_id: 'usr-rc-jp1', encargado_calidad_id: 'usr-rc-ec',
+    estado: 'cerrada', alertas: [], visible_externo: true, created_by: 'usr-rc-ep1', created_at: '2026-05-12' },
+  { id: 'jrn-rc03', planta_id: 'plt-rcl', fecha: '2026-05-09', codigo: 'RCL-260509-1',
+    tipos_poste: ['8.70-350'], destino: 'SAESA', temperatura: 10, humedad_relativa: 65,
+    medidas_proteccion: ['ninguna_requerida'], lote_cemento: 'CB-RCL-2026-04', partida_aridos: 'AR-RCL-Q2', lote_acero: 'AZ-RCL-2026-03',
+    cono_abrams_mm: 16, operadores_enfierradura: ['trb-24', 'trb-26'], operadores_moldaje: ['trb-25'], operadores_hormigonado: ['trb-24'], operadores_curado: ['trb-25'],
+    jefe_planta_id: 'usr-rc-jp1', encargado_calidad_id: 'usr-rc-ec',
+    estado: 'cerrada', alertas: [], visible_externo: false, created_by: 'usr-rc-ep1', created_at: '2026-05-09' },
 ];
 
 // =============================================
@@ -1085,6 +1132,10 @@ export const MOCK_VERIFICACIONES: VerificacionFabricacion[] = [
   { id: 'ver-lk07', jornada_id: 'jrn-lk07', tipo_poste: '8.70-350', arm_diametro_cantidades: 'C', arm_fierros_segun_plano: 'C', arm_dimensiones_fierros: 'C', arm_distanciamiento_estribos: 'C', arm_union_alambres: 'C', arm_sin_oxido: 'C', arm_ducto_puesta_tierra: 'C', mol_pernos_candados: 'C', mol_apuntalamiento: 'C', mol_estanqueidad: 'C', mol_alineamiento: 'C', mol_limpieza: 'C', mol_desmoldante: 'C', hor_equipos_vibrado: 'C', hor_armadura_completa: 'C', hor_recubrimiento: 'C', hor_bordes_llenado: 'C', hor_marcas_bajorrelieve: 'C', hor_retiro_bujes: 'C', hor_membrana_curado: 'C', resultado: 'conforme', created_by: 'usr-hn-ep1' },
   { id: 'ver-lk08', jornada_id: 'jrn-lk08', tipo_poste: '10-350', arm_diametro_cantidades: 'C', arm_fierros_segun_plano: 'C', arm_dimensiones_fierros: 'C', arm_distanciamiento_estribos: 'C', arm_union_alambres: 'C', arm_sin_oxido: 'C', arm_ducto_puesta_tierra: 'C', mol_pernos_candados: 'C', mol_apuntalamiento: 'C', mol_estanqueidad: 'C', mol_alineamiento: 'C', mol_limpieza: 'C', mol_desmoldante: 'C', hor_equipos_vibrado: 'C', hor_armadura_completa: 'C', hor_recubrimiento: 'C', hor_bordes_llenado: 'C', hor_marcas_bajorrelieve: 'C', hor_retiro_bujes: 'C', hor_membrana_curado: 'C', resultado: 'conforme', created_by: 'usr-fc-ep1' },
   { id: 'ver-lk09', jornada_id: 'jrn-lk09', tipo_poste: '10-600', arm_diametro_cantidades: 'C', arm_fierros_segun_plano: 'C', arm_dimensiones_fierros: 'C', arm_distanciamiento_estribos: 'C', arm_union_alambres: 'C', arm_sin_oxido: 'C', arm_ducto_puesta_tierra: 'C', mol_pernos_candados: 'C', mol_apuntalamiento: 'C', mol_estanqueidad: 'C', mol_alineamiento: 'C', mol_limpieza: 'C', mol_desmoldante: 'C', hor_equipos_vibrado: 'C', hor_armadura_completa: 'C', hor_recubrimiento: 'C', hor_bordes_llenado: 'C', hor_marcas_bajorrelieve: 'C', hor_retiro_bujes: 'C', hor_membrana_curado: 'C', resultado: 'conforme', created_by: 'usr-fc-ep2' },
+  // === RACSOL Chillán verificaciones ===
+  { id: 'ver-rc01', jornada_id: 'jrn-rc01', tipo_poste: '10-350', arm_diametro_cantidades: 'C', arm_fierros_segun_plano: 'C', arm_dimensiones_fierros: 'C', arm_distanciamiento_estribos: 'C', arm_union_alambres: 'C', arm_sin_oxido: 'C', arm_ducto_puesta_tierra: 'C', mol_pernos_candados: 'C', mol_apuntalamiento: 'C', mol_estanqueidad: 'C', mol_alineamiento: 'C', mol_limpieza: 'C', mol_desmoldante: 'C', hor_equipos_vibrado: 'C', hor_armadura_completa: 'C', hor_recubrimiento: 'C', hor_bordes_llenado: 'C', hor_marcas_bajorrelieve: 'C', hor_retiro_bujes: 'C', hor_membrana_curado: 'C', resultado: 'conforme', created_by: 'usr-rc-ep1' },
+  { id: 'ver-rc02', jornada_id: 'jrn-rc02', tipo_poste: '10-600', arm_diametro_cantidades: 'C', arm_fierros_segun_plano: 'C', arm_dimensiones_fierros: 'C', arm_distanciamiento_estribos: 'C', arm_union_alambres: 'C', arm_sin_oxido: 'C', arm_ducto_puesta_tierra: 'C', mol_pernos_candados: 'C', mol_apuntalamiento: 'C', mol_estanqueidad: 'C', mol_alineamiento: 'C', mol_limpieza: 'C', mol_desmoldante: 'C', hor_equipos_vibrado: 'C', hor_armadura_completa: 'C', hor_recubrimiento: 'C', hor_bordes_llenado: 'C', hor_marcas_bajorrelieve: 'C', hor_retiro_bujes: 'C', hor_membrana_curado: 'C', resultado: 'conforme', created_by: 'usr-rc-ep1' },
+  { id: 'ver-rc03', jornada_id: 'jrn-rc03', tipo_poste: '8.70-350', arm_diametro_cantidades: 'C', arm_fierros_segun_plano: 'C', arm_dimensiones_fierros: 'C', arm_distanciamiento_estribos: 'C', arm_union_alambres: 'C', arm_sin_oxido: 'C', arm_ducto_puesta_tierra: 'C', mol_pernos_candados: 'C', mol_apuntalamiento: 'C', mol_estanqueidad: 'C', mol_alineamiento: 'C', mol_limpieza: 'C', mol_desmoldante: 'C', hor_equipos_vibrado: 'C', hor_armadura_completa: 'C', hor_recubrimiento: 'C', hor_bordes_llenado: 'C', hor_marcas_bajorrelieve: 'C', hor_retiro_bujes: 'C', hor_membrana_curado: 'C', resultado: 'conforme', created_by: 'usr-rc-ep1' },
 ];
 
 // =============================================
@@ -1150,6 +1201,10 @@ export const MOCK_DESMOLDES: RegistroDesmolde[] = [
   { id: 'des-lk07', jornada_id: 'jrn-lk07', fecha: '2026-05-09', eslinga_dos_puntos: true, defectos_detectados: false, created_by: 'usr-hn-ep1' },
   { id: 'des-lk08', jornada_id: 'jrn-lk08', fecha: '2026-05-10', eslinga_dos_puntos: true, defectos_detectados: false, created_by: 'usr-fc-ep1' },
   { id: 'des-lk09', jornada_id: 'jrn-lk09', fecha: '2026-05-11', eslinga_dos_puntos: true, defectos_detectados: false, created_by: 'usr-fc-ep2' },
+  // === RACSOL desmoldes ===
+  { id: 'des-rc01', jornada_id: 'jrn-rc01', fecha: '2026-05-07', eslinga_dos_puntos: true, defectos_detectados: false, created_by: 'usr-rc-ep1' },
+  { id: 'des-rc02', jornada_id: 'jrn-rc02', fecha: '2026-05-13', eslinga_dos_puntos: true, defectos_detectados: false, created_by: 'usr-rc-ep1' },
+  { id: 'des-rc03', jornada_id: 'jrn-rc03', fecha: '2026-05-10', eslinga_dos_puntos: true, defectos_detectados: false, created_by: 'usr-rc-ep1' },
 ];
 
 // =============================================
@@ -1304,6 +1359,10 @@ export const MOCK_PRODUCTO_TERMINADO: RegistroProductoTerminado[] = [
   { id: 'pt-lk07', jornada_id: 'jrn-lk07', fecha: '2026-05-10', metodo_curado: 'riego_manual', pt_sin_hallazgos_estructurales: 'C', pt_marcas_bajorrelieve: 'C', pt_eslinga_tenazas: 'C', pt_acopio_listones: 'C', pt_acopio_sin_hallazgos: 'C', pt_pintado: 'C', resultado: 'conforme', nc_detectadas: false, liberacion_confirmada: true, created_by: 'usr-hn-ep1' },
   { id: 'pt-lk08', jornada_id: 'jrn-lk08', fecha: '2026-05-11', metodo_curado: 'riego_manual', pt_sin_hallazgos_estructurales: 'C', pt_marcas_bajorrelieve: 'C', pt_eslinga_tenazas: 'C', pt_acopio_listones: 'C', pt_acopio_sin_hallazgos: 'C', pt_pintado: 'C', resultado: 'conforme', nc_detectadas: false, liberacion_confirmada: true, created_by: 'usr-fc-ep1' },
   { id: 'pt-lk09', jornada_id: 'jrn-lk09', fecha: '2026-05-12', metodo_curado: 'membrana_cavecur', pt_sin_hallazgos_estructurales: 'C', pt_marcas_bajorrelieve: 'C', pt_eslinga_tenazas: 'C', pt_acopio_listones: 'C', pt_acopio_sin_hallazgos: 'C', pt_pintado: 'C', resultado: 'conforme', nc_detectadas: false, liberacion_confirmada: true, created_by: 'usr-fc-ep2' },
+  // === RACSOL PT ===
+  { id: 'pt-rc01', jornada_id: 'jrn-rc01', fecha: '2026-05-08', metodo_curado: 'riego_manual', pt_sin_hallazgos_estructurales: 'C', pt_marcas_bajorrelieve: 'C', pt_eslinga_tenazas: 'C', pt_acopio_listones: 'C', pt_acopio_sin_hallazgos: 'C', pt_pintado: 'C', resultado: 'conforme', nc_detectadas: false, liberacion_confirmada: true, created_by: 'usr-rc-ep1' },
+  { id: 'pt-rc02', jornada_id: 'jrn-rc02', fecha: '2026-05-13', metodo_curado: 'riego_manual', pt_sin_hallazgos_estructurales: 'C', pt_marcas_bajorrelieve: 'C', pt_eslinga_tenazas: 'C', pt_acopio_listones: 'C', pt_acopio_sin_hallazgos: 'C', pt_pintado: 'C', resultado: 'conforme', nc_detectadas: false, liberacion_confirmada: true, created_by: 'usr-rc-ep1' },
+  { id: 'pt-rc03', jornada_id: 'jrn-rc03', fecha: '2026-05-11', metodo_curado: 'riego_manual', pt_sin_hallazgos_estructurales: 'C', pt_marcas_bajorrelieve: 'C', pt_eslinga_tenazas: 'C', pt_acopio_listones: 'C', pt_acopio_sin_hallazgos: 'C', pt_pintado: 'C', resultado: 'conforme', nc_detectadas: false, liberacion_confirmada: true, created_by: 'usr-rc-ep1' },
 ];
 
 // =============================================

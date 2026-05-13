@@ -424,10 +424,11 @@ function PopupJornada({
 
 // ─── Vista Auditor Externo ───────────────────────────────
 function VistaAuditorExterno() {
-  const { jornadas, verificaciones, ensayos, empresas, plantas } = useApp();
+  const { jornadas, verificaciones, ensayos, empresas, plantas, condiciones, noConformidades } = useApp();
   const [vista, setVista] = useState<'calendario' | 'consolidada'>('consolidada');
   const [empresaCalendario, setEmpresaCalendario] = useState<string>('');
   const [jornadaPopup, setJornadaPopup] = useState<Jornada | null>(null);
+  const [alertasExpandidas, setAlertasExpandidas] = useState(false);
 
   const jornadasVisibles = jornadas.filter(j => j.estado === 'cerrada' && j.visible_externo === true);
 
@@ -450,6 +451,90 @@ function VistaAuditorExterno() {
   const pctConforme = todasVerif.length > 0
     ? Math.round(todasVerif.filter(v => v.resultado === 'conforme').length / todasVerif.length * 100)
     : 100;
+
+  // ─── ALERTAS PROACTIVAS ──────────────────────────────
+  type Alerta = { id: string; nivel: 'rojo' | 'amarillo'; icono: string; titulo: string; detalle: string; plantaId: string };
+
+  const alertas = useMemo(() => {
+    const result: Alerta[] = [];
+    const hoy = Date.now();
+    const MS_DIA = 1000 * 60 * 60 * 24;
+
+    plantas.forEach(planta => {
+      const empresa = empresas.find(e => e.id === planta.empresa_id);
+      const tag = `${empresa?.nombre || ''} — ${planta.nombre.replace('Planta ', '')}`;
+
+      // 1. Condiciones vencidas
+      condiciones.filter(c => c.planta_id === planta.id && c.estado === 'vencido').forEach(c => {
+        result.push({
+          id: `cond-v-${c.id}`, nivel: 'rojo', icono: '🔴',
+          titulo: `Condición vencida: ${c.descripcion}`,
+          detalle: tag + (c.fecha_vencimiento ? ` · Venció el ${formatDate(c.fecha_vencimiento)}` : ''),
+          plantaId: planta.id,
+        });
+      });
+
+      // 2. Condiciones por vencer (< 30 días)
+      condiciones.filter(c => c.planta_id === planta.id && c.estado === 'por_vencer').forEach(c => {
+        const diasRestantes = c.fecha_vencimiento
+          ? Math.ceil((new Date(c.fecha_vencimiento).getTime() - hoy) / MS_DIA) : 0;
+        result.push({
+          id: `cond-pv-${c.id}`, nivel: 'amarillo', icono: '🟡',
+          titulo: `Condición por vencer en ${diasRestantes} días: ${c.descripcion}`,
+          detalle: tag + (c.fecha_vencimiento ? ` · Vence el ${formatDate(c.fecha_vencimiento)}` : ''),
+          plantaId: planta.id,
+        });
+      });
+
+      // 3. NC abiertas > 15 días sin cierre
+      noConformidades.filter(nc => nc.planta_id === planta.id && nc.estado === 'abierta').forEach(nc => {
+        const diasAbierta = Math.floor((hoy - new Date(nc.fecha_deteccion).getTime()) / MS_DIA);
+        if (diasAbierta > 15) {
+          result.push({
+            id: `nc-${nc.id}`, nivel: 'rojo', icono: '⚠️',
+            titulo: `NC abierta hace ${diasAbierta} días: ${nc.numero}`,
+            detalle: tag + ` · ${nc.detalle?.substring(0, 60)}...`,
+            plantaId: planta.id,
+          });
+        } else {
+          result.push({
+            id: `nc-${nc.id}`, nivel: 'amarillo', icono: '⚠️',
+            titulo: `NC abierta: ${nc.numero}`,
+            detalle: tag + ` · ${diasAbierta} días · ${nc.detalle?.substring(0, 60)}`,
+            plantaId: planta.id,
+          });
+        }
+      });
+
+      // 4. Ensayos atrasados (> 30 días sin ensayo nuevo)
+      const ensayosPlanta = ensayos.filter(e => e.planta_id === planta.id)
+        .sort((a, b) => b.fecha_muestra.localeCompare(a.fecha_muestra));
+      if (ensayosPlanta.length > 0) {
+        const diasUltimoEnsayo = Math.floor((hoy - new Date(ensayosPlanta[0].fecha_muestra).getTime()) / MS_DIA);
+        if (diasUltimoEnsayo > 45) {
+          result.push({
+            id: `ens-${planta.id}`, nivel: 'rojo', icono: '🧪',
+            titulo: `Sin ensayo de compresión hace ${diasUltimoEnsayo} días`,
+            detalle: tag + ` · Último: ${formatDate(ensayosPlanta[0].fecha_muestra)}`,
+            plantaId: planta.id,
+          });
+        } else if (diasUltimoEnsayo > 30) {
+          result.push({
+            id: `ens-${planta.id}`, nivel: 'amarillo', icono: '🧪',
+            titulo: `Ensayo de compresión pendiente (${diasUltimoEnsayo} días)`,
+            detalle: tag + ` · Último: ${formatDate(ensayosPlanta[0].fecha_muestra)}`,
+            plantaId: planta.id,
+          });
+        }
+      }
+    });
+
+    // Ordenar: rojos primero
+    return result.sort((a, b) => (a.nivel === 'rojo' ? 0 : 1) - (b.nivel === 'rojo' ? 0 : 1));
+  }, [plantas, empresas, condiciones, noConformidades, ensayos]);
+
+  const alertasRojas = alertas.filter(a => a.nivel === 'rojo').length;
+  const alertasAmarillas = alertas.filter(a => a.nivel === 'amarillo').length;
 
   // Función para navegar desde consolidado al calendario con empresa preseleccionada
   const irACalendario = (empresaId: string) => {
@@ -484,13 +569,57 @@ function VistaAuditorExterno() {
         </div>
       </div>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard icon="📋" label="Jornadas publicadas" value={String(jornadasVisibles.length)} sub="lotes cerrados y liberados" />
-        <KpiCard icon="🏭" label="Plantas activas" value={String(plantasConProduccion.length)} sub="reportando producción" />
-        <KpiCard icon="🧪" label="Ensayos vinculados" value={String(totalEnsayos)} sub="compresión a 28 días" />
-        <KpiCard icon="✅" label="Conformidad" value={`${pctConforme}%`} sub="inspecciones de fabricación" />
-      </div>
+      {/* ── BANNER DE ALERTAS PROACTIVAS ── */}
+      {alertas.length > 0 && (
+        <div className={`rounded-2xl border overflow-hidden transition-all duration-300 ${
+          alertasRojas > 0
+            ? 'border-status-red/30 bg-status-red/5'
+            : 'border-status-amber/30 bg-status-amber/5'
+        }`}>
+          {/* Resumen compacto — siempre visible */}
+          <button
+            onClick={() => setAlertasExpandidas(!alertasExpandidas)}
+            className="w-full px-5 py-3.5 flex items-center justify-between hover:bg-black/5 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-lg">{alertasRojas > 0 ? '🚨' : '⚡'}</span>
+              <div className="text-left">
+                <p className="text-sm font-bold">
+                  {alertas.length} alerta{alertas.length !== 1 ? 's' : ''} requiere{alertas.length === 1 ? '' : 'n'} atención
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {alertasRojas > 0 && <span className="text-status-red font-semibold">{alertasRojas} urgente{alertasRojas > 1 ? 's' : ''}</span>}
+                  {alertasRojas > 0 && alertasAmarillas > 0 && ' · '}
+                  {alertasAmarillas > 0 && <span className="text-status-amber font-semibold">{alertasAmarillas} preventiva{alertasAmarillas > 1 ? 's' : ''}</span>}
+                </p>
+              </div>
+            </div>
+            <span className={`text-xs transition-transform duration-200 ${alertasExpandidas ? 'rotate-180' : ''}`}>▼</span>
+          </button>
+
+          {/* Detalle expandido */}
+          {alertasExpandidas && (
+            <div className="border-t border-border/20 divide-y divide-border/10 max-h-[320px] overflow-y-auto">
+              {alertas.map(a => (
+                <Link
+                  key={a.id}
+                  href={`/auditor/expediente/${a.plantaId}`}
+                  className="flex items-start gap-3 px-5 py-3 hover:bg-black/5 transition-colors group"
+                >
+                  <span className="text-sm mt-0.5 shrink-0">{a.icono}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold group-hover:text-primary transition-colors">{a.titulo}</p>
+                    <p className="text-[10px] text-muted-foreground truncate">{a.detalle}</p>
+                  </div>
+                  <span className="text-[10px] text-primary opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mt-1">
+                    Ver expediente →
+                  </span>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Toggle de vista */}
       <div className="flex items-center gap-1 p-1 bg-muted/50 rounded-xl w-fit">
@@ -605,6 +734,44 @@ function VistaAuditorExterno() {
           onSelectJornada={setJornadaPopup}
         />
       )}
+
+      {/* KPIs — resumen compacto al pie */}
+      <div className="rounded-xl border border-border/30 bg-card/40 px-6 py-3 flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2">
+            <span className="text-sm">📋</span>
+            <div>
+              <p className="text-sm font-bold leading-none">{jornadasVisibles.length}</p>
+              <p className="text-[10px] text-muted-foreground">Jornadas</p>
+            </div>
+          </div>
+          <div className="w-px h-8 bg-border/30" />
+          <div className="flex items-center gap-2">
+            <span className="text-sm">🏭</span>
+            <div>
+              <p className="text-sm font-bold leading-none">{plantasConProduccion.length}</p>
+              <p className="text-[10px] text-muted-foreground">Plantas</p>
+            </div>
+          </div>
+          <div className="w-px h-8 bg-border/30" />
+          <div className="flex items-center gap-2">
+            <span className="text-sm">🧪</span>
+            <div>
+              <p className="text-sm font-bold leading-none">{totalEnsayos}</p>
+              <p className="text-[10px] text-muted-foreground">Ensayos</p>
+            </div>
+          </div>
+          <div className="w-px h-8 bg-border/30" />
+          <div className="flex items-center gap-2">
+            <span className="text-sm">✅</span>
+            <div>
+              <p className="text-sm font-bold leading-none">{pctConforme}%</p>
+              <p className="text-[10px] text-muted-foreground">Conformidad</p>
+            </div>
+          </div>
+        </div>
+        <p className="text-[10px] text-muted-foreground">Programa SAESA 2026</p>
+      </div>
 
       {/* Popup */}
       {jornadaPopup && (
