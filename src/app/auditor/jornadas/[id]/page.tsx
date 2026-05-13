@@ -4,6 +4,7 @@ import { useApp } from '@/lib/store';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import Link from 'next/link';
+import { use } from 'react';
 
 // ─── Helpers ────────────────────────────────────────────
 function formatDate(iso: string) {
@@ -46,8 +47,8 @@ function Row({ label, value, highlight }: { label: string; value: string; highli
 }
 
 // ─── Ficha Component ─────────────────────────────────────
-export default function FichaTrazabilidad({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default function FichaTrazabilidad({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const {
     jornadas, verificaciones, desmoldes, productoTerminado,
     ensayos, usuarios, plantas, empresas, materiales,

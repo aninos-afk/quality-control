@@ -20,7 +20,7 @@ import {
 // Versión: incrementar si cambia el schema de datos
 // para forzar reinicio limpio en clientes existentes.
 // =============================================
-const STORAGE_VERSION = 'qc_v7';
+const STORAGE_VERSION = 'qc_v10';
 const SK = (key: string) => `${STORAGE_VERSION}_${key}`;
 
 function fromStorage<T>(key: string, fallback: T): T {

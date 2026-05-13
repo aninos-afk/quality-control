@@ -42,8 +42,11 @@ export function JornadaCalendar({ jornadas, usuarios, onDayClick, canToggleVisib
   const [month, setMonth] = useState(new Date().getMonth());
 
   const jornadaMap = useMemo(() => {
-    const map = new Map<string, Jornada>();
-    jornadas.forEach(j => map.set(j.fecha, j));
+    const map = new Map<string, Jornada[]>();
+    jornadas.forEach(j => {
+      const existing = map.get(j.fecha) || [];
+      map.set(j.fecha, [...existing, j]);
+    });
     return map;
   }, [jornadas]);
 
@@ -108,10 +111,11 @@ export function JornadaCalendar({ jornadas, usuarios, onDayClick, canToggleVisib
         <div className="grid grid-cols-7">
           {calendarDays.map((day, idx) => {
             const dateStr = day.date.toISOString().slice(0, 10);
-            const jornada = jornadaMap.get(dateStr);
+            const dayJornadas = jornadaMap.get(dateStr) || [];
             const isToday = dateStr === today;
             const isWeekend = day.date.getDay() === 0 || day.date.getDay() === 6;
-            const colors = jornada ? estadoColors[jornada.estado] : null;
+            const hasJornadas = dayJornadas.length > 0 && day.inMonth;
+            const hasHallazgo = dayJornadas.some(j => jornadasConHallazgos?.has(j.id));
 
             return (
               <div
@@ -120,11 +124,9 @@ export function JornadaCalendar({ jornadas, usuarios, onDayClick, canToggleVisib
                   'relative min-h-[72px] p-1.5 border-b border-r border-border/15 transition-all duration-150',
                   !day.inMonth && 'opacity-30',
                   isWeekend && 'bg-muted/5',
-                  jornada && day.inMonth && 'cursor-pointer hover:bg-muted/20',
                   isToday && 'ring-1 ring-inset ring-primary/40',
                 )}
-                onClick={() => jornada && day.inMonth && onDayClick?.(jornada)}
-                onMouseEnter={() => jornada && day.inMonth && setHoveredDay(dateStr)}
+                onMouseEnter={() => hasJornadas && setHoveredDay(dateStr)}
                 onMouseLeave={() => setHoveredDay(null)}
               >
                 {/* Date number */}
@@ -135,75 +137,71 @@ export function JornadaCalendar({ jornadas, usuarios, onDayClick, canToggleVisib
                   {day.date.getDate()}
                 </div>
 
-                {/* Jornada indicator */}
-                {jornada && day.inMonth && colors && (
-                  <div className={cn('rounded-md px-1.5 py-1 border', colors.bg, colors.border)}>
-                    <div className="flex items-center gap-1">
-                      <span className={cn('w-2 h-2 rounded-full shrink-0', colors.dot)} />
-                      <span className="text-[10px] font-medium truncate flex-1">{jornada.codigo}</span>
-                      {/* Hallazgos pendientes indicator */}
-                      {jornadasConHallazgos?.has(jornada.id) && (
-                        <span className="shrink-0 text-[9px] leading-none text-status-yellow" title="Hallazgos pendientes de revisión">⚠️</span>
-                      )}
-                      {/* Visibility icon for cerrada jornadas */}
-                      {jornada.estado === 'cerrada' && canToggleVisibility && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onToggleVisibility?.(jornada.id, !jornada.visible_externo);
-                          }}
-                          className={cn(
-                            'shrink-0 w-4 h-4 flex items-center justify-center rounded transition-all text-[9px] leading-none',
-                            jornada.visible_externo
-                              ? 'text-status-blue hover:text-status-blue/70'
-                              : 'text-muted-foreground/50 hover:text-foreground/70'
-                          )}
-                          title={jornada.visible_externo ? 'Visible al auditor — click para ocultar' : 'Solo interno — click para publicar'}
+                {/* Chips individuales por lote */}
+                {hasJornadas && (
+                  <div className="space-y-0.5">
+                    {dayJornadas.slice(0, 2).map((jornada) => {
+                      const colors = estadoColors[jornada.estado];
+                      return (
+                        <div
+                          key={jornada.id}
+                          className={cn('rounded-md px-1.5 py-0.5 border cursor-pointer hover:opacity-75 transition-opacity', colors.bg, colors.border)}
+                          onClick={(e) => { e.stopPropagation(); onDayClick?.(jornada); }}
                         >
-                          {jornada.visible_externo ? '👁️' : '🔒'}
-                        </button>
-                      )}
-                      {/* Read-only icon when user can't toggle */}
-                      {jornada.estado === 'cerrada' && !canToggleVisibility && (
-                        <span className={cn(
-                          'shrink-0 text-[9px] leading-none',
-                          jornada.visible_externo ? 'text-status-blue' : 'text-muted-foreground/40'
-                        )}>
-                          {jornada.visible_externo ? '👁️' : '🔒'}
-                        </span>
-                      )}
-                    </div>
+                          <div className="flex items-center gap-1">
+                            <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', colors.dot)} />
+                            <span className="text-[10px] font-medium truncate flex-1">{jornada.codigo}</span>
+                            {jornada.estado === 'cerrada' && canToggleVisibility && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); onToggleVisibility?.(jornada.id, !jornada.visible_externo); }}
+                                className={cn('shrink-0 w-4 h-4 flex items-center justify-center text-[9px]',
+                                  jornada.visible_externo ? 'text-status-blue' : 'text-muted-foreground/50'
+                                )}
+                                title={jornada.visible_externo ? 'Visible al auditor' : 'Solo interno'}
+                              >
+                                {jornada.visible_externo ? '👁️' : '🔒'}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {dayJornadas.length > 2 && (
+                      <div
+                        className="text-[9px] text-center text-muted-foreground/60 cursor-pointer hover:text-foreground/60 transition-colors"
+                        onClick={() => onDayClick?.(dayJornadas[2])}
+                      >
+                        +{dayJornadas.length - 2} más
+                      </div>
+                    )}
+                    {hasHallazgo && <span className="text-[9px] text-status-yellow">⚠️</span>}
                   </div>
                 )}
 
-                {/* Tooltip on hover */}
-                {hoveredDay === dateStr && jornada && day.inMonth && (
-                  <div className="absolute z-50 left-1/2 -translate-x-1/2 top-full mt-1 w-52 p-3 rounded-lg bg-popover border border-border/50 shadow-xl text-xs space-y-1.5 pointer-events-none">
-                    <div className="font-semibold">{jornada.codigo}</div>
-                    <div className="flex items-center gap-1.5">
-                      <span className={cn('w-2 h-2 rounded-full', colors!.dot)} />
-                      <span>{ESTADOS_JORNADA_LABELS[jornada.estado]}</span>
-                    </div>
-                    <div className="text-muted-foreground">Destino: {jornada.destino}</div>
-                    <div className="text-muted-foreground">Tipos: {jornada.tipos_poste.join(', ')}</div>
-                    {jornada.temperatura && <div className="text-muted-foreground">{jornada.temperatura}°C · {jornada.humedad_relativa}% HR</div>}
-                    {jornada.estado === 'cerrada' && (
-                      <div className={cn(
-                        'flex items-center gap-1 pt-1 border-t border-border/30 mt-1',
-                        jornada.visible_externo ? 'text-status-blue' : 'text-muted-foreground'
-                      )}>
-                        <span>{jornada.visible_externo ? '👁️' : '🔒'}</span>
-                        <span>{jornada.visible_externo ? 'Visible al auditor externo' : 'Solo uso interno'}</span>
+                {/* Tooltip on hover — muestra el lote más urgente */}
+                {hoveredDay === dateStr && hasJornadas && (() => {
+                  const jornada = dayJornadas.find(j => j.estado !== 'cerrada') || dayJornadas[0];
+                  const colors = estadoColors[jornada.estado];
+                  return (
+                    <div className="absolute z-50 left-1/2 -translate-x-1/2 top-full mt-1 w-56 p-3 rounded-lg bg-popover border border-border/50 shadow-xl text-xs space-y-1.5 pointer-events-none">
+                      {dayJornadas.length > 1 && (
+                        <div className="text-[10px] text-muted-foreground font-medium">{dayJornadas.length} lotes este día</div>
+                      )}
+                      <div className="font-semibold">{jornada.codigo}</div>
+                      <div className="flex items-center gap-1.5">
+                        <span className={cn('w-2 h-2 rounded-full', colors.dot)} />
+                        <span>{ESTADOS_JORNADA_LABELS[jornada.estado]}</span>
                       </div>
-                    )}
-                    {jornada.created_by && usuarios && (() => {
-                      const u = usuarios.find(u => u.id === jornada.created_by);
-                      return u ? (
-                        <div className="text-muted-foreground/50 italic pt-0.5">por {u.nombre}</div>
-                      ) : null;
-                    })()}
-                  </div>
-                )}
+                      <div className="text-muted-foreground">Destino: {jornada.destino}</div>
+                      <div className="text-muted-foreground">Tipos: {jornada.tipos_poste.join(', ')}</div>
+                      {jornada.temperatura && <div className="text-muted-foreground">{jornada.temperatura}°C · {jornada.humedad_relativa}% HR</div>}
+                      {jornada.created_by && usuarios && (() => {
+                        const u = usuarios.find(u => u.id === jornada.created_by);
+                        return u ? <div className="text-muted-foreground/50 italic pt-0.5">por {u.nombre}</div> : null;
+                      })()}
+                    </div>
+                  );
+                })()}
               </div>
             );
           })}

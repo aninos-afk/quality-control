@@ -392,8 +392,8 @@ function PopupJornada({
 
           {/* Responsables */}
           <div className="flex items-center gap-4 text-xs text-muted-foreground pt-2 border-t border-border/20">
-            {jefePlanta && <span>👤 {jefePlanta.nombre}</span>}
-            {encCalidad && <span>🔬 {encCalidad.nombre}</span>}
+            {jefePlanta && <span>👤 <strong>Jefe Planta:</strong> {jefePlanta.nombre}</span>}
+            {encCalidad && <span>🔬 <strong>Enc. Calidad:</strong> {encCalidad.nombre}</span>}
           </div>
         </div>
 
@@ -402,12 +402,20 @@ function PopupJornada({
           <button onClick={onClose} className="text-xs text-muted-foreground hover:text-foreground transition-colors">
             Cerrar
           </button>
-          <Link
-            href={`/auditor/jornadas/${jornada.id}`}
-            className="text-xs px-4 py-2 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all"
-          >
-            Ver ficha completa →
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/auditor/expediente/${jornada.planta_id}`}
+              className="text-xs px-4 py-2 rounded-lg bg-muted/60 text-foreground font-medium hover:bg-muted transition-all"
+            >
+              📋 Expediente
+            </Link>
+            <Link
+              href={`/auditor/jornadas/${jornada.id}`}
+              className="text-xs px-4 py-2 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all"
+            >
+              Ver ficha completa →
+            </Link>
+          </div>
         </div>
       </div>
     </div>
@@ -557,14 +565,27 @@ function VistaAuditorExterno() {
                     </div>
                   )}
 
-                  <div className="text-xs text-muted-foreground flex items-center justify-between pt-1 border-t border-border/20">
-                    <span>{plantasActivas.length} planta{plantasActivas.length !== 1 ? 's' : ''} activa{plantasActivas.length !== 1 ? 's' : ''}</span>
-                    <button
-                      onClick={() => irACalendario(emp.id)}
-                      className="text-primary hover:underline"
-                    >
-                      Ver calendario →
-                    </button>
+                  <div className="text-xs text-muted-foreground flex flex-col gap-2 pt-1 border-t border-border/20">
+                    <div className="flex items-center justify-between">
+                      <span>{plantasActivas.length} planta{plantasActivas.length !== 1 ? 's' : ''} activa{plantasActivas.length !== 1 ? 's' : ''}</span>
+                      <button
+                        onClick={() => irACalendario(emp.id)}
+                        className="text-primary hover:underline"
+                      >
+                        Ver calendario →
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {plantasActivas.map(p => (
+                        <Link
+                          key={p.id}
+                          href={`/auditor/expediente/${p.id}`}
+                          className="text-[10px] px-2.5 py-1 rounded-md bg-primary/10 text-primary font-medium border border-primary/20 hover:bg-primary/20 transition-colors"
+                        >
+                          📋 {p.nombre.replace('Planta ', '')}
+                        </Link>
+                      ))}
+                    </div>
                   </div>
                 </CardContent>
               </Card>

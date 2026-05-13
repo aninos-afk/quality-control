@@ -25,11 +25,18 @@ export default function NuevaJornadaPage() {
 
   const hoy = format(new Date(), 'yyyy-MM-dd');
   const codigoFecha = format(new Date(), 'yyMMdd');
-  const codigo = `${planta?.codigo || 'XXX'}-${codigoFecha}`;
+
+  // Múltiples lotes por día: calcular secuencia y heredar materiales del último lote de hoy
+  const jornadasHoy = jornadas.filter(j => j.fecha === hoy);
+  const ultimaJornadaHoy = [...jornadasHoy].sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
+  const secuencia = jornadasHoy.length + 1;
+  const codigo = `${planta?.codigo || 'XXX'}-${codigoFecha}-${secuencia}`;
 
   // --- Producción ---
   const [tiposPoste, setTiposPoste] = useState<TipoPoste[]>([]);
-  const [destino, setDestino] = useState<DestinoProduccion>('SAESA');
+  const [destino, setDestino] = useState<DestinoProduccion>(
+    (ultimaJornadaHoy?.destino as DestinoProduccion) ?? 'SAESA'
+  );
 
   // --- Condiciones ambientales ---
   const [temperatura, setTemperatura] = useState('');
@@ -54,17 +61,23 @@ export default function NuevaJornadaPage() {
   // Auto-select materials when there's only one active per type
   useEffect(() => {
     const autoSelect: Record<TipoMaterial, string> = { cemento: '', aridos: '', acero: '', aditivo: '' };
-    for (const tipo of ['cemento', 'aridos', 'acero', 'aditivo'] as TipoMaterial[]) {
-      const activos = materiales.filter(m => m.tipo === tipo);
-      if (activos.length === 1) {
-        autoSelect[tipo] = activos[0].id;
+    if (ultimaJornadaHoy) {
+      // Heredar IDs de materiales del último lote del mismo día
+      autoSelect.cemento = ultimaJornadaHoy.material_cemento_id || '';
+      autoSelect.aridos  = ultimaJornadaHoy.material_aridos_id  || '';
+      autoSelect.acero   = ultimaJornadaHoy.material_acero_id   || '';
+      autoSelect.aditivo = ultimaJornadaHoy.material_aditivo_id || '';
+    } else {
+      // Sin lotes previos hoy: auto-seleccionar si hay un único activo por tipo
+      for (const tipo of ['cemento', 'aridos', 'acero', 'aditivo'] as TipoMaterial[]) {
+        const activos = materiales.filter(m => m.tipo === tipo);
+        if (activos.length === 1) autoSelect[tipo] = activos[0].id;
       }
     }
     setSelectedMaterials(autoSelect);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const already = jornadas.find(j => j.fecha === hoy);
 
   const toggleTipo = (tipo: TipoPoste) => {
     setTiposPoste(prev => prev.includes(tipo) ? prev.filter(t => t !== tipo) : [...prev, tipo]);
@@ -171,21 +184,25 @@ export default function NuevaJornadaPage() {
     router.push('/fabrica/jornadas');
   };
 
-  if (already) {
-    return (
-      <div className="text-center py-20 space-y-4">
-        <p className="text-muted-foreground">Ya existe una jornada para hoy ({already.codigo}).</p>
-        <Button onClick={() => router.push(`/fabrica/jornadas/${already.id}`)}>Ver jornada →</Button>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6 max-w-3xl">
       <div>
         <h1 className="text-2xl font-bold">Nueva Jornada de Fabricación</h1>
         <p className="text-muted-foreground text-sm mt-1">{planta?.nombre} — {hoy} — {codigo}</p>
       </div>
+
+      {/* Banner informativo si ya hay lotes hoy */}
+      {jornadasHoy.length > 0 && (
+        <div className="p-3 rounded-lg bg-status-blue/10 border border-status-blue/20 text-xs text-status-blue flex items-start gap-2">
+          <span className="shrink-0 mt-0.5">ℹ️</span>
+          <span>
+            Ya hay <strong>{jornadasHoy.length}</strong> lote(s) registrado(s) hoy
+            ({jornadasHoy.map(j => j.codigo).join(', ')}).
+            Este será el <strong>lote #{secuencia}</strong>.
+            Los materiales fueron heredados del lote anterior.
+          </span>
+        </div>
+      )}
 
       {/* Encabezado */}
       <Card className="bg-card/50 border-border/50">

@@ -14,6 +14,21 @@ import { cn } from '@/lib/utils';
 
 type ViewMode = 'calendario' | 'lista';
 
+const SIGUIENTE_ACCION: Record<string, { label: string; colorClass: string; bgClass: string; borderClass: string }> = {
+  abierta:                { label: 'Verificar fabricación', colorClass: 'text-status-blue',              bgClass: 'bg-status-blue/10',              borderClass: 'border-status-blue/20' },
+  fabricacion_verificada: { label: 'Registrar desmolde',   colorClass: 'text-status-yellow',            bgClass: 'bg-status-yellow/10',            borderClass: 'border-status-yellow/20' },
+  desmolde_registrado:    { label: 'Inspección PT',        colorClass: 'text-[oklch(0.7_0.15_30)]',     bgClass: 'bg-[oklch(0.7_0.15_30)]/10',    borderClass: 'border-[oklch(0.7_0.15_30)]/20' },
+  producto_terminado:     { label: 'Revisar y liberar',    colorClass: 'text-status-green',             bgClass: 'bg-status-green/10',             borderClass: 'border-status-green/20' },
+};
+
+function getDiasAgo(fecha: string): string {
+  const hoy = new Date().toISOString().slice(0, 10);
+  const diff = Math.floor((new Date(hoy).getTime() - new Date(fecha).getTime()) / 86400000);
+  if (diff === 0) return 'Hoy';
+  if (diff === 1) return 'Ayer';
+  return `Hace ${diff} días`;
+}
+
 export default function JornadasPage() {
   const router = useRouter();
   const { planta, can } = useAuth();
@@ -21,6 +36,24 @@ export default function JornadasPage() {
   const jornadas = getJornadasByPlanta(planta?.id || '').sort((a, b) => b.fecha.localeCompare(a.fecha));
   const [view, setView] = useState<ViewMode>('calendario');
   const canToggleVis = can('toggle_visible_externo');
+  const [bannerExpanded, setBannerExpanded] = useState(false);
+  const [bannerShowAll, setBannerShowAll] = useState(false);
+
+  // Lotes con acción pendiente (no cerrados), ordenados por fecha ascendente (más antigua = más urgente)
+  const pendientes = useMemo(() =>
+    jornadas.filter(j => j.estado !== 'cerrada').sort((a, b) => a.fecha.localeCompare(b.fecha)),
+    [jornadas]
+  );
+
+  // Conteo por tipo de acción para el resumen compacto
+  const pendientesPorAccion = useMemo(() => {
+    const counts: Record<string, number> = {};
+    pendientes.forEach(j => {
+      const accion = SIGUIENTE_ACCION[j.estado];
+      if (accion) counts[accion.label] = (counts[accion.label] || 0) + 1;
+    });
+    return counts;
+  }, [pendientes]);
 
   // Jornadas en estado producto_terminado con hallazgos pendientes
   const hallazgosSet = useMemo(() => {
@@ -32,8 +65,84 @@ export default function JornadasPage() {
     return set;
   }, [jornadas, productoTerminado]);
 
+  const visiblePendientes = bannerShowAll ? pendientes : pendientes.slice(0, 2);
+  const hiddenCount = pendientes.length - 2;
+
   return (
     <div className="space-y-6">
+
+      {/* Banner compacto de lotes pendientes (A+B) */}
+      {pendientes.length > 0 && (
+        <div className="rounded-xl border border-border/40 bg-card/40 overflow-hidden">
+          {/* Línea compacta de resumen — siempre visible */}
+          <button
+            onClick={() => setBannerExpanded(prev => !prev)}
+            className="w-full flex items-center gap-2.5 px-4 py-2.5 hover:bg-muted/10 transition-colors text-left"
+          >
+            <span className="text-sm">📌</span>
+            <div className="flex items-center gap-2 flex-1 flex-wrap">
+              {Object.entries(pendientesPorAccion).map(([label, count]) => {
+                const entry = Object.values(SIGUIENTE_ACCION).find(a => a.label === label);
+                return (
+                  <span key={label} className={`text-xs px-2 py-0.5 rounded-md border font-medium ${entry?.bgClass || ''} ${entry?.colorClass || ''} ${entry?.borderClass || ''}`}>
+                    {count} {label.toLowerCase()}
+                  </span>
+                );
+              })}
+            </div>
+            <span className={cn(
+              'text-muted-foreground/50 text-xs transition-transform duration-200',
+              bannerExpanded && 'rotate-180'
+            )}>▾</span>
+          </button>
+
+          {/* Detalle expandible — los 2 más urgentes + "ver más" */}
+          {bannerExpanded && (
+            <div className="border-t border-border/30 divide-y divide-border/20">
+              {visiblePendientes.map(j => {
+                const accion = SIGUIENTE_ACCION[j.estado];
+                if (!accion) return null;
+                return (
+                  <button
+                    key={j.id}
+                    onClick={() => router.push(`/fabrica/jornadas/${j.id}`)}
+                    className="w-full flex items-center justify-between px-4 py-2 hover:bg-muted/20 transition-colors text-left group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="font-mono text-xs font-semibold text-foreground/80">{j.codigo}</span>
+                      <span className="text-xs text-muted-foreground">{getDiasAgo(j.fecha)}</span>
+                      <span className={`text-xs px-2 py-0.5 rounded-md border font-medium ${accion.bgClass} ${accion.colorClass} ${accion.borderClass}`}>
+                        {accion.label}
+                      </span>
+                      {hallazgosSet.has(j.id) && (
+                        <span className="text-xs text-status-yellow">⚠️ Hallazgos</span>
+                      )}
+                    </div>
+                    <span className="text-muted-foreground/40 group-hover:text-muted-foreground transition-colors text-sm">→</span>
+                  </button>
+                );
+              })}
+              {!bannerShowAll && hiddenCount > 0 && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setBannerShowAll(true); }}
+                  className="w-full px-4 py-2 text-xs text-muted-foreground hover:text-foreground/70 transition-colors text-left"
+                >
+                  ▾ Ver {hiddenCount} más...
+                </button>
+              )}
+              {bannerShowAll && hiddenCount > 0 && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setBannerShowAll(false); }}
+                  className="w-full px-4 py-1.5 text-xs text-muted-foreground hover:text-foreground/70 transition-colors text-left"
+                >
+                  ▴ Mostrar menos
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Plan de Inspección</h1>
