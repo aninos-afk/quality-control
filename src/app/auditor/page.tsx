@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useApp } from '@/lib/store';
 import { useAuth } from '@/lib/auth';
 import { Card, CardContent } from '@/components/ui/card';
@@ -425,7 +426,9 @@ function PopupJornada({
 // ─── Vista Auditor Externo ───────────────────────────────
 function VistaAuditorExterno() {
   const { jornadas, verificaciones, ensayos, empresas, plantas, condiciones, noConformidades, refreshFromStorage } = useApp();
-  const [vista, setVista] = useState<'calendario' | 'consolidada'>('consolidada');
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const vista = searchParams.get('vista') === 'calendario' ? 'calendario' : 'consolidada';
   const [empresaCalendario, setEmpresaCalendario] = useState<string>('');
   const [jornadaPopup, setJornadaPopup] = useState<Jornada | null>(null);
   const [alertasExpandidas, setAlertasExpandidas] = useState(false);
@@ -540,16 +543,15 @@ function VistaAuditorExterno() {
   // Función para navegar desde consolidado al calendario con empresa preseleccionada
   const irACalendario = (empresaId: string) => {
     setEmpresaCalendario(empresaId);
-    setVista('calendario');
+    router.push('/auditor?vista=calendario');
   };
 
-  // Cuando se hace click en el toggle "Calendario" sin contexto, preseleccionar primera empresa
-  const handleToggleCalendario = () => {
-    if (!empresaCalendario && empresasConProduccion.length > 0) {
+  // Cuando se navega al calendario sin empresa, preseleccionar primera
+  useEffect(() => {
+    if (vista === 'calendario' && !empresaCalendario && empresasConProduccion.length > 0) {
       setEmpresaCalendario(empresasConProduccion[0].id);
     }
-    setVista('calendario');
-  };
+  }, [vista, empresaCalendario, empresasConProduccion]);
 
   return (
     <div className="space-y-8">
@@ -635,25 +637,6 @@ function VistaAuditorExterno() {
         </div>
       )}
 
-      {/* Toggle de vista */}
-      <div className="flex items-center gap-1 p-1 bg-muted/50 rounded-xl w-fit">
-        <button
-          onClick={() => setVista('consolidada')}
-          className={`px-5 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-            vista === 'consolidada' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          📊 Consolidado
-        </button>
-        <button
-          onClick={handleToggleCalendario}
-          className={`px-5 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-            vista === 'calendario' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          📅 Calendario
-        </button>
-      </div>
 
       {/* ── VISTA CONSOLIDADA ── */}
       {vista === 'consolidada' && (

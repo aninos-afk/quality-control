@@ -25,7 +25,10 @@ export default function AuditorLayout({ children }: { children: React.ReactNode 
   if (!isAuthenticated || (user?.rol !== 'auditor_plataforma' && user?.rol !== 'auditor_externo')) return null;
 
   const navItems = user?.rol === 'auditor_externo'
-    ? [{ href: '/auditor', label: 'Producción', icon: '📋' }]
+    ? [
+        { href: '/auditor', label: 'Consolidado', icon: '📊' },
+        { href: '/auditor?vista=calendario', label: 'Calendario', icon: '📅' },
+      ]
     : AUDITOR_NAV;
 
   const title = user?.rol === 'auditor_externo' ? 'Vista Auditor' : 'Panel Plataforma';

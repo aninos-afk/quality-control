@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useAuth, ROL_LABELS } from '@/lib/auth';
 import { useState } from 'react';
@@ -100,7 +100,12 @@ export function Sidebar({ title, subtitle, items }: SidebarProps) {
         {/* Navigation */}
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
           {items.map((item) => {
-            const isActive = pathname === item.href || (item.href !== '/fabrica' && item.href !== '/auditor' && pathname.startsWith(item.href));
+            // Support query-param-based items like '/auditor?vista=calendario'
+            const [itemPath, itemQuery] = item.href.split('?');
+            const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
+            const isActive = itemQuery
+              ? pathname === itemPath && searchParams.get('vista') === new URLSearchParams(itemQuery).get('vista')
+              : pathname === itemPath && !searchParams.get('vista');
             return (
               <Link
                 key={item.href}
