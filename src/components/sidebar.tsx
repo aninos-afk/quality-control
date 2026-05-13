@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useAuth, ROL_LABELS } from '@/lib/auth';
 import { useState } from 'react';
+import Image from 'next/image';
 
 interface NavItem {
   href: string;
@@ -66,13 +67,18 @@ export function Sidebar({ title, subtitle, items }: SidebarProps) {
         {/* Header */}
         <div className="px-5 py-5 border-b border-sidebar-border">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-primary/15 flex items-center justify-center">
-              <span className="text-lg">🛡️</span>
-            </div>
-            <div className="min-w-0">
-              <h2 className="text-sm font-semibold text-sidebar-foreground truncate">{displayTitle}</h2>
-              {displaySubtitle && <p className="text-xs text-muted-foreground truncate">{displaySubtitle}</p>}
-            </div>
+            <Image
+              src="/grupo-saesa.png"
+              alt="Grupo SAESA"
+              width={120}
+              height={36}
+              className="h-7 w-auto object-contain opacity-90"
+              priority
+            />
+          </div>
+          <div className="mt-3">
+            <h2 className="text-sm font-semibold text-sidebar-foreground truncate">{displayTitle}</h2>
+            {displaySubtitle && <p className="text-xs text-muted-foreground truncate">{displaySubtitle}</p>}
           </div>
 
           {/* Plant switcher for encargado_calidad */}
@@ -126,7 +132,7 @@ export function Sidebar({ title, subtitle, items }: SidebarProps) {
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-all duration-200"
           >
-            <span className="text-base">🚪</span>
+            <span className="text-xs">←</span>
             <span>Cerrar sesión</span>
           </button>
         </div>

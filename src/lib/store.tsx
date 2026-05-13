@@ -99,6 +99,8 @@ interface AppState {
   addObservacion: (obs: ObservacionAuditor) => void;
   addMaterial: (material: MaterialActivo) => void;
   updateMaterial: (id: string, updates: Partial<MaterialActivo>) => void;
+  // Refresh
+  refreshFromStorage: () => void;
 }
 
 const AppContext = createContext<AppState | null>(null);
@@ -185,6 +187,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const updateMaterial = useCallback((id: string, updates: Partial<MaterialActivo>) =>
     setMateriales(prev => prev.map(m => m.id === id ? { ...m, ...updates } : m)), []);
 
+  // Refresh — re-read all operational data from localStorage
+  const refreshFromStorage = useCallback(() => {
+    setMoldes(fromStorage('moldes', MOCK_MOLDES));
+    setTrabajadores(fromStorage('trabajadores', MOCK_TRABAJADORES));
+    setCondiciones(fromStorage('condiciones', MOCK_CONDICIONES));
+    setMateriales(fromStorage('materiales', MOCK_MATERIALES));
+    setJornadas(fromStorage('jornadas', MOCK_JORNADAS));
+    setVerificaciones(fromStorage('verificaciones', MOCK_VERIFICACIONES));
+    setDesmoldes(fromStorage('desmoldes', MOCK_DESMOLDES));
+    setProductoTerminado(fromStorage('productoTerminado', MOCK_PRODUCTO_TERMINADO));
+    setNC(fromStorage('noConformidades', MOCK_NC));
+    setEnsayos(fromStorage('ensayos', MOCK_ENSAYOS));
+    setAuditLog(fromStorage('auditLog', []));
+    setObservaciones(fromStorage('observaciones', []));
+  }, []);
+
   const value: AppState = {
     empresas, plantas, usuarios, moldes, trabajadores, condiciones, materiales,
     jornadas, verificaciones, desmoldes, productoTerminado,
@@ -197,6 +215,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     addProductoTerminado, addNC, updateNC, addEnsayo,
     addCondicion, updateCondicion, deleteCondicion, addMolde, updateMolde, addTrabajador, updateTrabajador,
     addAuditLog, addObservacion, addMaterial, updateMaterial,
+    refreshFromStorage,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

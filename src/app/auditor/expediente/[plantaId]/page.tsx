@@ -418,7 +418,7 @@ export default function ExpedientePlantaPage({ params }: { params: Promise<{ pla
 
       {/* Footer */}
       <div className="text-center text-xs text-muted-foreground py-4">
-        <p>Expediente generado por el Sistema de Gestión de Calidad | {empresa?.nombre}</p>
+        <p>Expediente generado por el Sistema de Gestión de Calidad | Grupo SAESA</p>
       </div>
     </div>
   );

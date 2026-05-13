@@ -424,11 +424,12 @@ function PopupJornada({
 
 // ─── Vista Auditor Externo ───────────────────────────────
 function VistaAuditorExterno() {
-  const { jornadas, verificaciones, ensayos, empresas, plantas, condiciones, noConformidades } = useApp();
+  const { jornadas, verificaciones, ensayos, empresas, plantas, condiciones, noConformidades, refreshFromStorage } = useApp();
   const [vista, setVista] = useState<'calendario' | 'consolidada'>('consolidada');
   const [empresaCalendario, setEmpresaCalendario] = useState<string>('');
   const [jornadaPopup, setJornadaPopup] = useState<Jornada | null>(null);
   const [alertasExpandidas, setAlertasExpandidas] = useState(false);
+  const [syncing, setSyncing] = useState(false);
 
   const jornadasVisibles = jornadas.filter(j => j.estado === 'cerrada' && j.visible_externo === true);
 
@@ -563,8 +564,21 @@ function VistaAuditorExterno() {
               Postes de hormigón armado · Control de calidad certificado
             </p>
           </div>
-          <div className="text-right text-xs text-muted-foreground hidden sm:block">
+          <div className="text-right text-xs text-muted-foreground hidden sm:flex sm:flex-col sm:items-end sm:gap-2">
             <p className="font-medium text-foreground">Programa SAESA 2026</p>
+            <button
+              onClick={() => {
+                setSyncing(true);
+                refreshFromStorage();
+                setTimeout(() => setSyncing(false), 600);
+              }}
+              disabled={syncing}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-50"
+              title="Actualizar datos desde las fábricas"
+            >
+              <span className={syncing ? 'animate-spin' : ''}>↻</span>
+              {syncing ? 'Sincronizando...' : 'Actualizar datos'}
+            </button>
           </div>
         </div>
       </div>
