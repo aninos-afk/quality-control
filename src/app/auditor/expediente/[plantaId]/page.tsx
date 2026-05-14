@@ -4,7 +4,7 @@ import { use, useState } from 'react';
 import { useApp } from '@/lib/store';
 import { Card, CardContent } from '@/components/ui/card';
 import { Semaforo, SemaforoResumen } from '@/components/semaforo';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 // ─── Helpers ────────────────────────────────────────
 function formatDate(iso?: string) {
@@ -81,6 +81,7 @@ export default function ExpedientePlantaPage({ params }: { params: Promise<{ pla
     getEnsayosByPlanta, getNCByPlanta, getTrabajadoresByPlanta,
     getJornadasByPlanta,
   } = useApp();
+  const router = useRouter();
 
   const [tab, setTab] = useState<Tab>('condiciones');
 
@@ -92,7 +93,7 @@ export default function ExpedientePlantaPage({ params }: { params: Promise<{ pla
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-3">
         <p className="text-4xl">🔒</p>
         <h2 className="text-lg font-semibold">Planta no encontrada</h2>
-        <Link href="/auditor" className="text-xs text-primary hover:underline">← Volver al portal</Link>
+        <button onClick={() => router.back()} className="text-xs text-primary hover:underline">← Volver al portal</button>
       </div>
     );
   }
@@ -115,9 +116,9 @@ export default function ExpedientePlantaPage({ params }: { params: Promise<{ pla
     <div className="max-w-5xl mx-auto space-y-6">
 
       {/* Back */}
-      <Link href="/auditor" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
+      <button onClick={() => router.back()} className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
         ← Volver al portal
-      </Link>
+      </button>
 
       {/* Header */}
       <div className="rounded-2xl overflow-hidden border border-border/40">

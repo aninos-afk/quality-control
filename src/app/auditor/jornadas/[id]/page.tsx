@@ -63,7 +63,7 @@ export default function FichaTrazabilidad({ params }: { params: Promise<{ id: st
         <p className="text-4xl">🔒</p>
         <h2 className="text-lg font-semibold">Documento no disponible</h2>
         <p className="text-sm text-muted-foreground">Este registro no existe o no está publicado.</p>
-        <Link href="/auditor" className="text-xs text-primary hover:underline">← Volver al portal</Link>
+        <button onClick={() => router.back()} className="text-xs text-primary hover:underline">← Volver al portal</button>
       </div>
     );
   }
@@ -74,7 +74,7 @@ export default function FichaTrazabilidad({ params }: { params: Promise<{ id: st
         <p className="text-4xl">🔒</p>
         <h2 className="text-lg font-semibold">Registro confidencial</h2>
         <p className="text-sm text-muted-foreground">La fábrica no ha publicado este registro para revisión externa.</p>
-        <Link href="/auditor" className="text-xs text-primary hover:underline">← Volver al portal</Link>
+        <button onClick={() => router.back()} className="text-xs text-primary hover:underline">← Volver al portal</button>
       </div>
     );
   }
@@ -97,9 +97,9 @@ export default function FichaTrazabilidad({ params }: { params: Promise<{ id: st
     <div className="max-w-3xl mx-auto space-y-2">
 
       {/* Back */}
-      <Link href="/auditor" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-2">
+      <button onClick={() => router.back()} className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-2">
         ← Volver al portal
-      </Link>
+      </button>
 
       {/* Header premium */}
       <div className="rounded-2xl overflow-hidden border border-border/40">
@@ -277,7 +277,7 @@ export default function FichaTrazabilidad({ params }: { params: Promise<{ id: st
 
       {/* Footer */}
       <div className="text-center text-xs text-muted-foreground py-4">
-        <p>Documento generado por el Sistema de Gestión de Calidad | Hormisur SpA</p>
+        <p>Documento generado por el Sistema de Gestión de Calidad | Grupo SAESA</p>
         <p className="mt-0.5">Este documento acredita la trazabilidad del proceso de fabricación según registros internos auditados.</p>
       </div>
 

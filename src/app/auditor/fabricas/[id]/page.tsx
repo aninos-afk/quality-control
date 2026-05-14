@@ -1,6 +1,7 @@
 'use client';
 
 import { use } from 'react';
+import { useRouter } from 'next/navigation';
 import { useApp } from '@/lib/store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatCard } from '@/components/stat-card';
@@ -16,6 +17,7 @@ interface Props {
 export default function EmpresaDetallePage({ params }: Props) {
   const { id } = use(params);
   const { getEmpresa, getPlantasByEmpresa, getCondicionesByPlanta, getJornadasByPlanta, getNCByPlanta, getEnsayosByPlanta } = useApp();
+  const router = useRouter();
   const empresa = getEmpresa(id);
   const plantas = getPlantasByEmpresa(id);
 
@@ -28,7 +30,7 @@ export default function EmpresaDetallePage({ params }: Props) {
           <h1 className="text-2xl font-bold">{empresa.nombre}</h1>
           <p className="text-muted-foreground text-sm mt-1">{plantas.length} planta{plantas.length !== 1 ? 's' : ''} registrada{plantas.length !== 1 ? 's' : ''}</p>
         </div>
-        <Link href="/auditor"><Button variant="outline" size="sm">← Volver</Button></Link>
+        <Button variant="outline" size="sm" onClick={() => router.back()}>← Volver</Button>
       </div>
 
       {/* Plants grid */}
