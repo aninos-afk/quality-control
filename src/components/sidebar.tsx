@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { useAuth, ROL_LABELS } from '@/lib/auth';
 import { useState } from 'react';
 import Image from 'next/image';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 interface NavItem {
   href: string;
@@ -125,14 +126,15 @@ export function Sidebar({ title, subtitle, items }: SidebarProps) {
           })}
         </nav>
 
-        {/* User info & logout */}
-        <div className="px-3 py-4 border-t border-sidebar-border space-y-2">
+        {/* User info, theme toggle & logout */}
+        <div className="px-3 py-4 border-t border-sidebar-border space-y-1">
           {user && (
             <div className="px-3 py-2">
               <p className="text-sm font-medium text-sidebar-foreground truncate">{user.nombre}</p>
               <p className="text-xs text-muted-foreground">{ROL_LABELS[user.rol]}</p>
             </div>
           )}
+          <ThemeToggle />
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-all duration-200"

@@ -53,7 +53,49 @@
   --color-status-blue: var(--status-blue);
 }
 
+/* ─── Light Mode (default) ─────────────────────────────── */
 :root {
+  --background: oklch(0.985 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.45 0.2 250);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.94 0.005 250);
+  --secondary-foreground: oklch(0.25 0 0);
+  --muted: oklch(0.94 0.005 250);
+  --muted-foreground: oklch(0.46 0 0);
+  --accent: oklch(0.94 0.01 250);
+  --accent-foreground: oklch(0.2 0 0);
+  --destructive: oklch(0.55 0.22 25);
+  --border: oklch(0 0 0 / 10%);
+  --input: oklch(0 0 0 / 12%);
+  --ring: oklch(0.45 0.2 250);
+  --chart-1: oklch(0.55 0.2 250);
+  --chart-2: oklch(0.6 0.15 160);
+  --chart-3: oklch(0.65 0.15 60);
+  --chart-4: oklch(0.5 0.2 310);
+  --chart-5: oklch(0.6 0.15 30);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.97 0.005 250);
+  --sidebar-foreground: oklch(0.2 0 0);
+  --sidebar-primary: oklch(0.45 0.2 250);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.92 0.015 250);
+  --sidebar-accent-foreground: oklch(0.15 0 0);
+  --sidebar-border: oklch(0 0 0 / 8%);
+  --sidebar-ring: oklch(0.45 0.2 250);
+  /* Semáforo & status */
+  --status-green: oklch(0.55 0.2 155);
+  --status-yellow: oklch(0.65 0.18 85);
+  --status-red: oklch(0.52 0.22 25);
+  --status-blue: oklch(0.50 0.2 250);
+}
+
+/* ─── Dark Mode ────────────────────────────────────────── */
+.dark {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
@@ -77,7 +119,6 @@
   --chart-3: oklch(0.75 0.15 60);
   --chart-4: oklch(0.6 0.2 310);
   --chart-5: oklch(0.7 0.15 30);
-  --radius: 0.625rem;
   --sidebar: oklch(0.17 0.005 250);
   --sidebar-foreground: oklch(0.85 0 0);
   --sidebar-primary: oklch(0.65 0.2 250);

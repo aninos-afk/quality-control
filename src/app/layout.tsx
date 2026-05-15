@@ -4,6 +4,7 @@ import "./globals.css";
 import { AppProvider } from "@/lib/store";
 import { AuthProvider } from "@/lib/auth";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ThemeScript } from "@/components/theme-toggle";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -21,7 +22,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es" className="dark" suppressHydrationWarning>
+    <html lang="es" suppressHydrationWarning>
+      <head>
+        <ThemeScript />
+      </head>
       <body className={`${inter.variable} font-sans`}>
         <AuthProvider>
           <AppProvider>
