@@ -53,6 +53,7 @@ export default function FichaTrazabilidad({ params }: { params: Promise<{ id: st
     jornadas, verificaciones, desmoldes, productoTerminado,
     ensayos, usuarios, plantas, empresas, materiales,
   } = useApp();
+  const router = useRouter();
 
   const jornada = jornadas.find(j => j.id === id);
 
