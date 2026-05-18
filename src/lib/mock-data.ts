@@ -1407,6 +1407,49 @@ export const MOCK_NC: NoConformidad[] = [
     accion_inmediata: 'Segregación del elemento', disposicion: 'reparar', apto_saesa: false,
     estado: 'abierta', created_by: 'usr-hs-jp2',
   },
+  // === ABRIL 2026 NC ===
+  {
+    id: 'nc-a01', planta_id: 'plt-hbl', numero: 'HBL-2026-001', nivel: 'producto', jornada_id: 'jrn-a08',
+    fecha_deteccion: '2026-04-02', origen: 'verificacion_fabricacion', tipo_poste: '8.70-350',
+    molde_id: 'mol-11', tipo_defecto: 'ducto_tapado', detalle: 'Ducto de puesta a tierra obstruido con hormigón residual',
+    accion_inmediata: 'Destapar ducto con varilla', disposicion: 'reparar', apto_saesa: true,
+    estado: 'cerrada', fecha_cierre: '2026-04-03', created_by: 'usr-hb-ep1',
+  },
+  {
+    id: 'nc-a02', planta_id: 'plt-osr', numero: 'OSR-2026-001', nivel: 'proceso',
+    fecha_deteccion: '2026-04-01', origen: 'manual', tipo_defecto: 'fisura_superficial',
+    detalle: 'Fisura retracción superficial en lote matinal, ancho menor a 0.2mm',
+    ancho_fisura_mm: 0.18, disposicion: 'liberar_concesion', apto_saesa: true,
+    estado: 'cerrada', fecha_cierre: '2026-04-02', created_by: 'usr-hs-ec',
+  },
+  {
+    id: 'nc-a03', planta_id: 'plt-hnr', numero: 'HNR-2026-001', nivel: 'producto', jornada_id: 'jrn-a17',
+    fecha_deteccion: '2026-04-04', origen: 'desmolde', tipo_poste: '10-350',
+    tipo_defecto: 'nido', detalle: 'Nido en zona inferior por vibrado insuficiente en frío extremo (3°C)',
+    accion_inmediata: 'Segregación', disposicion: 'reparar', apto_saesa: false,
+    estado: 'cerrada', fecha_cierre: '2026-04-10', created_by: 'usr-hn-ep1',
+  },
+  {
+    id: 'nc-a04', planta_id: 'plt-hvl', numero: 'HVL-2026-001', nivel: 'producto', jornada_id: 'jrn-a13',
+    fecha_deteccion: '2026-04-02', origen: 'producto_terminado', tipo_poste: '10-600',
+    tipo_defecto: 'perforacion_tapada', detalle: 'Perforación para travesaño parcialmente obstruida',
+    accion_inmediata: 'Limpieza mecánica', disposicion: 'reparar', apto_saesa: true,
+    estado: 'cerrada', fecha_cierre: '2026-04-04', created_by: 'usr-hv-ep1',
+  },
+  {
+    id: 'nc-a05', planta_id: 'plt-fpa', numero: 'FPA-2026-001', nivel: 'proceso',
+    fecha_deteccion: '2026-04-03', origen: 'manual', tipo_defecto: 'fisura_superficial',
+    detalle: 'Fisuras por retracción plástica en postes de lote vespertino', ancho_fisura_mm: 0.12,
+    disposicion: 'liberar_concesion', apto_saesa: true,
+    estado: 'cerrada', fecha_cierre: '2026-04-05', created_by: 'usr-fc-ec',
+  },
+  {
+    id: 'nc-a06', planta_id: 'plt-rcl', numero: 'RCL-2026-001', nivel: 'producto',
+    fecha_deteccion: '2026-04-15', origen: 'desmolde', tipo_poste: '10-350',
+    tipo_defecto: 'despunte_desprendimiento', detalle: 'Despunte en arista superior del poste',
+    accion_inmediata: 'Reparación con mortero', disposicion: 'reparar', apto_saesa: true,
+    estado: 'cerrada', fecha_cierre: '2026-04-18', created_by: 'usr-rc-ep1',
+  },
   // === MAYO 2026 NC ===
   {
     id: 'nc-m01', planta_id: 'plt-tmc', numero: 'TMC-2026-004', nivel: 'producto', jornada_id: 'jrn-m02',
@@ -1414,6 +1457,27 @@ export const MOCK_NC: NoConformidad[] = [
     molde_id: 'mol-1', tipo_defecto: 'despunte_desprendimiento', detalle: 'Despunte menor en base del poste detectado durante desmolde del lote TMC-260512-2',
     accion_inmediata: 'Segregación del poste para evaluación', disposicion: 'reparar', apto_saesa: false,
     estado: 'abierta', created_by: 'usr-hs-ep1',
+  },
+  {
+    id: 'nc-m02', planta_id: 'plt-hbl', numero: 'HBL-2026-002', nivel: 'producto', jornada_id: 'jrn-mh02',
+    fecha_deteccion: '2026-05-13', origen: 'producto_terminado', tipo_poste: '10-600',
+    tipo_defecto: 'fisura_superficial', detalle: 'Fisura superficial longitudinal en cara exterior, <0.15mm',
+    ancho_fisura_mm: 0.14, disposicion: 'liberar_concesion', apto_saesa: true,
+    estado: 'cerrada', fecha_cierre: '2026-05-14', created_by: 'usr-hb-ep1',
+  },
+  {
+    id: 'nc-m03', planta_id: 'plt-fco', numero: 'FCO-2026-002', nivel: 'proceso',
+    fecha_deteccion: '2026-05-08', origen: 'verificacion_fabricacion', tipo_poste: '10-350',
+    tipo_defecto: 'otro', detalle: 'Recubrimiento inferior al especificado en separadores laterales',
+    accion_inmediata: 'Corrección de separadores', disposicion: 'liberar_concesion', apto_saesa: true,
+    estado: 'cerrada', fecha_cierre: '2026-05-08', created_by: 'usr-fc-ep1',
+  },
+  {
+    id: 'nc-m04', planta_id: 'plt-osr', numero: 'OSR-2026-002', nivel: 'producto',
+    fecha_deteccion: '2026-05-07', origen: 'desmolde', tipo_poste: '11.5-1000',
+    tipo_defecto: 'fisura_flexion', detalle: 'Fisura de flexión detectada en zona de empotramiento durante desmolde',
+    ancho_fisura_mm: 0.30, accion_inmediata: 'Segregación inmediata', disposicion: 'reciclar', apto_saesa: false,
+    estado: 'abierta', created_by: 'usr-hs-ep3',
   },
 ];
 
@@ -1443,5 +1507,25 @@ export const MOCK_ENSAYOS: EnsayoCompresion[] = [
   { id: 'ens-12', planta_id: 'plt-fpa', jornada_id: 'jrn-14', fecha_muestra: '2026-03-14', tipo_hormigon: 'H-35', resultado_7d_mpa: 20.5, resultado_28d_mpa: 30.8, laboratorio: 'Lab. Materiales Puerto Montt', cumple: true, created_by: 'usr-fc-ec' },
   { id: 'ens-13', planta_id: 'plt-hvl', jornada_id: 'jrn-15', fecha_muestra: '2026-03-10', tipo_hormigon: 'H-35', resultado_7d_mpa: 22.2, resultado_28d_mpa: 33.0, laboratorio: 'Lab. Materiales Valdivia', cumple: true, created_by: 'usr-hv-ec' },
   { id: 'ens-14', planta_id: 'plt-hnr', jornada_id: 'jrn-16', fecha_muestra: '2026-03-08', tipo_hormigon: 'H-35', resultado_7d_mpa: 21.8, resultado_28d_mpa: 32.6, laboratorio: 'Lab. Materiales Coyhaique', cumple: true, created_by: 'usr-hn-ec' },
+  // === ABRIL 2026 ensayos ===
+  { id: 'ens-15', planta_id: 'plt-tmc', jornada_id: 'jrn-a01', fecha_muestra: '2026-04-05', tipo_hormigon: 'H-35', resultado_7d_mpa: 23.0, resultado_28d_mpa: 34.1, laboratorio: 'Lab. Materiales Temuco', cumple: true, created_by: 'usr-hs-ec' },
+  { id: 'ens-16', planta_id: 'plt-prl', jornada_id: 'jrn-a04', fecha_muestra: '2026-04-08', tipo_hormigon: 'H-30', resultado_7d_mpa: 19.0, resultado_28d_mpa: 28.2, laboratorio: 'Lab. Materiales Linares', cumple: true, created_by: 'usr-hs-ec' },
+  { id: 'ens-17', planta_id: 'plt-osr', jornada_id: 'jrn-a06', fecha_muestra: '2026-04-06', tipo_hormigon: 'H-35', resultado_7d_mpa: 22.5, resultado_28d_mpa: 33.8, laboratorio: 'Lab. Materiales Osorno', cumple: true, created_by: 'usr-hs-ec' },
+  { id: 'ens-18', planta_id: 'plt-hbl', jornada_id: 'jrn-a08', fecha_muestra: '2026-04-04', tipo_hormigon: 'H-35', resultado_7d_mpa: 23.5, resultado_28d_mpa: 35.0, laboratorio: 'Lab. Materiales Biobío', cumple: true, created_by: 'usr-hb-ec' },
+  { id: 'ens-19', planta_id: 'plt-frt', jornada_id: 'jrn-a11', fecha_muestra: '2026-04-06', tipo_hormigon: 'H-35', resultado_7d_mpa: 21.0, resultado_28d_mpa: 31.5, laboratorio: 'Lab. Materiales Puerto Montt', cumple: true, created_by: 'usr-hb-ec' },
+  { id: 'ens-20', planta_id: 'plt-hvl', jornada_id: 'jrn-a13', fecha_muestra: '2026-04-05', tipo_hormigon: 'H-35', resultado_7d_mpa: 22.8, resultado_28d_mpa: 33.5, laboratorio: 'Lab. Materiales Valdivia', cumple: true, created_by: 'usr-hv-ec' },
+  { id: 'ens-21', planta_id: 'plt-hnr', jornada_id: 'jrn-a16', fecha_muestra: '2026-04-04', tipo_hormigon: 'H-35', resultado_7d_mpa: 20.5, resultado_28d_mpa: 30.2, laboratorio: 'Lab. Materiales Coronel', cumple: true, created_by: 'usr-hn-ec' },
+  { id: 'ens-22', planta_id: 'plt-fco', jornada_id: 'jrn-a19', fecha_muestra: '2026-04-05', tipo_hormigon: 'H-35', resultado_7d_mpa: 23.2, resultado_28d_mpa: 34.5, laboratorio: 'Lab. Materiales Temuco', cumple: true, created_by: 'usr-fc-ec' },
+  { id: 'ens-23', planta_id: 'plt-fpa', jornada_id: 'jrn-a22', fecha_muestra: '2026-04-06', tipo_hormigon: 'H-35', resultado_7d_mpa: 21.2, resultado_28d_mpa: 31.0, laboratorio: 'Lab. Materiales Puerto Montt', cumple: true, created_by: 'usr-fc-ec' },
+  // === MAYO 2026 ensayos ===
+  { id: 'ens-24', planta_id: 'plt-tmc', jornada_id: 'jrn-m01', fecha_muestra: '2026-05-14', tipo_hormigon: 'H-35', resultado_7d_mpa: 23.8, resultado_28d_mpa: 35.2, laboratorio: 'Lab. Materiales Temuco', cumple: true, created_by: 'usr-hs-ec' },
+  { id: 'ens-25', planta_id: 'plt-prl', jornada_id: 'jrn-mp02', fecha_muestra: '2026-05-14', tipo_hormigon: 'H-30', resultado_7d_mpa: 19.5, resultado_28d_mpa: 29.0, laboratorio: 'Lab. Materiales Linares', cumple: true, created_by: 'usr-hs-ec' },
+  { id: 'ens-26', planta_id: 'plt-osr', jornada_id: 'jrn-mo02', fecha_muestra: '2026-05-14', tipo_hormigon: 'H-35', resultado_7d_mpa: 22.0, resultado_28d_mpa: 32.8, laboratorio: 'Lab. Materiales Osorno', cumple: true, created_by: 'usr-hs-ec' },
+  { id: 'ens-27', planta_id: 'plt-hbl', jornada_id: 'jrn-mh02', fecha_muestra: '2026-05-14', tipo_hormigon: 'H-35', resultado_7d_mpa: 24.0, resultado_28d_mpa: 35.5, laboratorio: 'Lab. Materiales Biobío', cumple: true, created_by: 'usr-hb-ec' },
+  { id: 'ens-28', planta_id: 'plt-frt', jornada_id: 'jrn-mf02', fecha_muestra: '2026-05-15', tipo_hormigon: 'H-35', resultado_7d_mpa: 21.8, resultado_28d_mpa: 32.2, laboratorio: 'Lab. Materiales Puerto Montt', cumple: true, created_by: 'usr-hb-ec' },
+  { id: 'ens-29', planta_id: 'plt-hvl', jornada_id: 'jrn-mv02', fecha_muestra: '2026-05-14', tipo_hormigon: 'H-35', resultado_7d_mpa: 23.0, resultado_28d_mpa: 34.0, laboratorio: 'Lab. Materiales Valdivia', cumple: true, created_by: 'usr-hv-ec' },
+  { id: 'ens-30', planta_id: 'plt-hnr', jornada_id: 'jrn-mn02', fecha_muestra: '2026-05-14', tipo_hormigon: 'H-35', resultado_7d_mpa: 21.5, resultado_28d_mpa: 31.8, laboratorio: 'Lab. Materiales Coronel', cumple: true, created_by: 'usr-hn-ec' },
+  { id: 'ens-31', planta_id: 'plt-fco', jornada_id: 'jrn-mc02', fecha_muestra: '2026-05-14', tipo_hormigon: 'H-35', resultado_7d_mpa: 22.5, resultado_28d_mpa: 33.0, laboratorio: 'Lab. Materiales Temuco', cumple: true, created_by: 'usr-fc-ec' },
+  { id: 'ens-32', planta_id: 'plt-fpa', jornada_id: 'jrn-mq02', fecha_muestra: '2026-05-15', tipo_hormigon: 'H-35', resultado_7d_mpa: 20.8, resultado_28d_mpa: 30.5, laboratorio: 'Lab. Materiales Puerto Montt', cumple: true, created_by: 'usr-fc-ec' },
+  { id: 'ens-33', planta_id: 'plt-rcl', jornada_id: 'jrn-rc02', fecha_muestra: '2026-05-14', tipo_hormigon: 'H-35', resultado_7d_mpa: 22.0, resultado_28d_mpa: 32.5, laboratorio: 'Lab. Materiales Coyhaique', cumple: true, created_by: 'usr-rc-ec' },
 ];
-

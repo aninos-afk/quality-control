@@ -6,6 +6,7 @@ import { Sidebar } from '@/components/sidebar';
 import { useAuth } from '@/lib/auth';
 
 const AUDITOR_NAV = [
+  { href: '/auditor/dashboard', label: 'Dashboard', icon: '📊' },
   { href: '/auditor', label: 'Empresas', icon: '🏢' },
   { href: '/auditor/comparacion', label: 'Comparación', icon: '📈' },
 ];
@@ -26,7 +27,8 @@ export default function AuditorLayout({ children }: { children: React.ReactNode 
 
   const navItems = user?.rol === 'auditor_externo'
     ? [
-        { href: '/auditor', label: 'Consolidado', icon: '📊' },
+        { href: '/auditor/dashboard', label: 'Dashboard', icon: '📊' },
+        { href: '/auditor', label: 'Consolidado', icon: '🏭' },
         { href: '/auditor?vista=calendario', label: 'Calendario', icon: '📅' },
       ]
     : AUDITOR_NAV;
