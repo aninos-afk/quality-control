@@ -71,9 +71,9 @@ export function Sidebar({ title, subtitle, items }: SidebarProps) {
             <Image
               src="/grupo-saesa.png"
               alt="Grupo SAESA"
-              width={120}
-              height={36}
-              className="h-7 w-auto object-contain opacity-90"
+              width={180}
+              height={54}
+              className="h-[42px] w-auto object-contain opacity-90"
               priority
             />
           </div>

@@ -6,13 +6,13 @@ export type TipoPoste = '8.70-350' | '10-350' | '10-600' | '11.5-600' | '11.5-10
 
 export type DestinoProduccion = 'SAESA' | 'otro_cliente' | 'stock';
 
-export type EstadoJornada = 'abierta' | 'fabricacion_verificada' | 'desmolde_registrado' | 'producto_terminado' | 'cerrada';
+export type EstadoJornada = 'abierta' | 'fabricacion_verificada' | 'desmolde_registrado' | 'producto_terminado' | 'cerrada' | 'despachada';
 
 export type PuntoVerificacion = 'C' | 'NC' | 'NA' | null;
 
 export type ResultadoVerificacion = 'conforme' | 'no_conforme';
 
-export type TipoDefecto = 'fisura_superficial' | 'fisura_flexion' | 'despunte_desprendimiento' | 'nido' | 'ducto_tapado' | 'perforacion_tapada' | 'otro';
+export type TipoDefecto = 'fisura_menor' | 'fisura_mayor' | 'despunte' | 'nido' | 'ducto_tapado' | 'perforacion_tapada' | 'dano_golpe' | 'otro';
 
 export type DisposicionPNC = 'liberar_concesion' | 'reparar' | 'reciclar' | 'eliminar';
 
@@ -276,6 +276,42 @@ export interface EnsayoCompresion {
   cumple?: boolean;
   observaciones?: string;
   created_by?: string;
+}
+
+// =============================================
+// DESPACHO
+// =============================================
+
+export type EstadoRecepcion = 'pendiente' | 'conforme' | 'con_danos';
+
+export interface PosteDespachado {
+  tipo_poste: TipoPoste;
+  cantidad: number;
+  codigos_plaquita: string[];   // código individual de cada poste (plaquita física)
+}
+
+export interface DespachoJornada {
+  id: string;
+  jornada_id: string;
+  planta_id: string;
+  fecha_despacho: string;
+  numero_guia: string;
+  destinatario: string;
+  transportista?: string;
+  patente_camion?: string;
+  nombre_chofer?: string;
+  postes: PosteDespachado[];
+  fotos_carga_urls: string[];       // fotos tomadas al cargar — evidencia de salida
+  observaciones_despacho?: string;
+  // Recepción en destino
+  estado_recepcion: EstadoRecepcion;
+  fecha_recepcion?: string;
+  nombre_receptor?: string;
+  fotos_recepcion_urls: string[];   // fotos tomadas al descargar — evidencia de llegada
+  observaciones_recepcion?: string;
+  danos_detectados?: string;        // descripción de daños si los hay
+  created_by: string;
+  created_at: string;
 }
 
 // =============================================

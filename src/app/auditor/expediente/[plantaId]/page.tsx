@@ -41,8 +41,8 @@ const TIPO_MATERIAL_LABEL: Record<string, string> = {
 };
 
 const DEFECTO_LABEL: Record<string, string> = {
-  despunte_desprendimiento: 'Despunte / Desprendimiento',
-  fisura_superficial: 'Fisura superficial',
+  despunte: 'Despunte / Desprendimiento',
+  fisura_menor: 'Fisura ≤ 0.2 mm',
   nido: 'Nido de abeja',
   otro: 'Otro',
 };

@@ -17,7 +17,7 @@ interface Props {
 
 export default function JornadaDetallePage({ params }: Props) {
   const { id } = use(params);
-  const { getJornada, getVerificacionesByJornada, getDesmoldeByJornada, getProductoTerminadoByJornada, getNCByJornada, trabajadores, moldes, usuarios, updateJornada, addAuditLog } = useApp();
+  const { getJornada, getVerificacionesByJornada, getDesmoldeByJornada, getProductoTerminadoByJornada, getNCByJornada, getDespachoByJornada, trabajadores, moldes, usuarios, updateJornada, addAuditLog } = useApp();
   const { user, can } = useAuth();
   const router = useRouter();
 
@@ -62,6 +62,7 @@ export default function JornadaDetallePage({ params }: Props) {
   const verificaciones = getVerificacionesByJornada(id);
   const desmolde = getDesmoldeByJornada(id);
   const productoTerminado = getProductoTerminadoByJornada(id);
+  const despacho = getDespachoByJornada(id);
   const ncs = getNCByJornada(id);
 
   const getStepStatus = (step: number) => {
@@ -70,6 +71,7 @@ export default function JornadaDetallePage({ params }: Props) {
       2: { done: verificaciones.length > 0, locked: false },
       3: { done: !!desmolde, locked: verificaciones.length === 0 },
       4: { done: !!productoTerminado, locked: !desmolde },
+      5: { done: !!despacho, locked: jornada.estado !== 'cerrada' && jornada.estado !== 'despachada' },
     };
     return estados[step] || { done: false, locked: true };
   };
@@ -106,6 +108,17 @@ export default function JornadaDetallePage({ params }: Props) {
   const ptCreatedBy = productoTerminado ? getUserLabel(productoTerminado.created_by) : null;
   const jrnCreatedBy = getUserLabel(jornada.created_by);
 
+  const despachoDesc = despacho
+    ? [
+        `Guía ${despacho.numero_guia}`,
+        despacho.destinatario,
+        despacho.postes.reduce((s, p) => s + p.cantidad, 0) + ' postes',
+        despacho.estado_recepcion === 'conforme' ? '✅ Recibido conforme'
+          : despacho.estado_recepcion === 'con_danos' ? '⚠️ Con daños en recepción'
+          : '⏳ Pendiente de recepción',
+      ].join(' · ')
+    : '';
+
   const steps = [
     { num: 1, label: 'Jornada', desc: `${jornada.temperatura}°C | ${jornada.humedad_relativa}% HR | Cemento: ${jornada.lote_cemento}`, href: null, createdBy: jrnCreatedBy },
     { num: 2, label: 'Verificación', desc: verificaciones.length > 0 ? verificaciones.map(v => {
@@ -118,6 +131,7 @@ export default function JornadaDetallePage({ params }: Props) {
     }).join(' | ') : '', href: `/fabrica/jornadas/${id}/verificacion`, createdBy: verCreatedBy },
     { num: 3, label: 'Desmolde', desc: desmolde ? `${desmolde.fecha} — ${desmolde.defectos_detectados ? 'Con defectos corregidos' : 'Sin defectos'}` : '', href: `/fabrica/jornadas/${id}/desmolde`, createdBy: desCreatedBy },
     { num: 4, label: 'Producto terminado', desc: ptDesc, href: `/fabrica/jornadas/${id}/terminado`, createdBy: ptCreatedBy },
+    { num: 5, label: 'Despacho', desc: despachoDesc, href: `/fabrica/jornadas/${id}/despacho`, createdBy: null },
   ];
 
   return (

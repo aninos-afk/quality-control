@@ -57,13 +57,14 @@ export const TIPOS_POSTE: { value: TipoPoste; label: string }[] = [
 ];
 
 export const TIPOS_DEFECTO: { value: TipoDefecto; label: string }[] = [
-  { value: 'fisura_superficial', label: 'Fisura superficial (retracción)' },
-  { value: 'fisura_flexion', label: 'Fisura de flexión' },
-  { value: 'despunte_desprendimiento', label: 'Despunte / desprendimiento' },
+  { value: 'fisura_menor', label: 'Fisura ≤ 0.2 mm (Retracción)' },
+  { value: 'fisura_mayor', label: 'Fisura > 0.2 mm' },
   { value: 'nido', label: 'Nido' },
+  { value: 'despunte', label: 'Despunte / desprendimiento' },
   { value: 'ducto_tapado', label: 'Ducto tapado' },
   { value: 'perforacion_tapada', label: 'Perforación tapada' },
-  { value: 'otro', label: 'Otro' },
+  { value: 'dano_golpe', label: 'Daño por golpe' },
+  { value: 'otro', label: 'Otro (especificar)' },
 ];
 
 export const DISPOSICIONES_PNC: { value: DisposicionPNC; label: string }[] = [
@@ -102,6 +103,7 @@ export const ESTADOS_JORNADA_LABELS: Record<string, string> = {
   desmolde_registrado: 'Desmolde registrado',
   producto_terminado: 'Producto terminado',
   cerrada: 'Cerrada',
+  despachada: 'Despachada',
 };
 
 export const DESTINOS_LABELS: Record<string, string> = {

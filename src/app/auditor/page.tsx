@@ -678,7 +678,13 @@ function VistaAuditorExterno() {
                     </div>
                     <div className={`text-center p-3 rounded-xl ${empConformidad === 100 ? 'bg-status-green/10' : 'bg-status-amber/10'}`}>
                       <p className={`text-2xl font-bold ${empConformidad === 100 ? 'text-status-green' : 'text-status-amber'}`}>{empConformidad}%</p>
-                      <p className="text-[10px] text-muted-foreground mt-0.5">conformidad</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center justify-center gap-1">
+                        conformidad
+                        <span
+                          title="Porcentaje de puntos de verificación de proceso (armadura, moldaje, hormigonado) calificados como 'conforme' sobre el total registrado en las jornadas publicadas."
+                          className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-muted-foreground/30 text-muted-foreground cursor-help text-[9px] font-bold leading-none"
+                        >?</span>
+                      </p>
                     </div>
                   </div>
 

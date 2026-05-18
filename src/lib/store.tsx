@@ -6,13 +6,13 @@ import type {
   Jornada, VerificacionFabricacion, RegistroDesmolde,
   RegistroProductoTerminado, NoConformidad, AccionCorrectiva,
   EnsayoCompresion, AuditLogEntry, ObservacionAuditor, Usuario,
-  MaterialActivo,
+  MaterialActivo, DespachoJornada,
 } from './types';
 import {
   MOCK_EMPRESAS, MOCK_PLANTAS, MOCK_USUARIOS, MOCK_MOLDES, MOCK_TRABAJADORES,
   MOCK_CONDICIONES, MOCK_JORNADAS, MOCK_VERIFICACIONES,
   MOCK_DESMOLDES, MOCK_PRODUCTO_TERMINADO, MOCK_NC,
-  MOCK_AC, MOCK_ENSAYOS, MOCK_MATERIALES,
+  MOCK_AC, MOCK_ENSAYOS, MOCK_MATERIALES, MOCK_DESPACHOS,
 } from './mock-data';
 
 // =============================================
@@ -20,7 +20,7 @@ import {
 // Versión: incrementar si cambia el schema de datos
 // para forzar reinicio limpio en clientes existentes.
 // =============================================
-const STORAGE_VERSION = 'qc_v12';
+const STORAGE_VERSION = 'qc_v13';
 const SK = (key: string) => `${STORAGE_VERSION}_${key}`;
 
 function fromStorage<T>(key: string, fallback: T): T {
@@ -61,6 +61,7 @@ interface AppState {
   ensayos: EnsayoCompresion[];
   auditLog: AuditLogEntry[];
   observaciones: ObservacionAuditor[];
+  despachos: DespachoJornada[];
   // Helpers
   getEmpresa: (id: string) => Empresa | undefined;
   getPlanta: (id: string) => Planta | undefined;
@@ -78,6 +79,7 @@ interface AppState {
   getTrabajadoresByPlanta: (plantaId: string) => Trabajador[];
   getObservacionesByPlanta: (plantaId: string) => ObservacionAuditor[];
   getMaterialesByPlanta: (plantaId: string) => MaterialActivo[];
+  getDespachoByJornada: (jornadaId: string) => DespachoJornada | undefined;
   // Mutations
   addJornada: (jornada: Jornada) => void;
   updateJornada: (id: string, updates: Partial<Jornada>) => void;
@@ -99,6 +101,8 @@ interface AppState {
   addObservacion: (obs: ObservacionAuditor) => void;
   addMaterial: (material: MaterialActivo) => void;
   updateMaterial: (id: string, updates: Partial<MaterialActivo>) => void;
+  addDespacho: (despacho: DespachoJornada) => void;
+  updateDespacho: (id: string, updates: Partial<DespachoJornada>) => void;
   // Refresh
   refreshFromStorage: () => void;
 }
@@ -125,6 +129,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [ensayos, setEnsayos] = useState<EnsayoCompresion[]>(() => fromStorage('ensayos', MOCK_ENSAYOS));
   const [auditLog, setAuditLog] = useState<AuditLogEntry[]>(() => fromStorage('auditLog', []));
   const [observaciones, setObservaciones] = useState<ObservacionAuditor[]>(() => fromStorage('observaciones', []));
+  const [despachos, setDespachos] = useState<DespachoJornada[]>(() => fromStorage('despachos', MOCK_DESPACHOS));
 
   // Persistir automáticamente cada colección cuando cambia
   useEffect(() => { toStorage('moldes', moldes); }, [moldes]);
@@ -139,6 +144,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => { toStorage('ensayos', ensayos); }, [ensayos]);
   useEffect(() => { toStorage('auditLog', auditLog); }, [auditLog]);
   useEffect(() => { toStorage('observaciones', observaciones); }, [observaciones]);
+  useEffect(() => { toStorage('despachos', despachos); }, [despachos]);
 
   // Helpers
   const getEmpresa = useCallback((id: string) => empresas.find(e => e.id === id), [empresas]);
@@ -157,6 +163,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const getTrabajadoresByPlanta = useCallback((pId: string) => trabajadores.filter(t => t.planta_id === pId), [trabajadores]);
   const getObservacionesByPlanta = useCallback((pId: string) => observaciones.filter(o => o.planta_id === pId), [observaciones]);
   const getMaterialesByPlanta = useCallback((pId: string) => materiales.filter(m => m.planta_id === pId), [materiales]);
+  const getDespachoByJornada = useCallback((jId: string) => despachos.find(d => d.jornada_id === jId), [despachos]);
 
   // Mutations
   const addJornada = useCallback((j: Jornada) => setJornadas(prev => [j, ...prev]), []);
@@ -186,6 +193,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const addMaterial = useCallback((m: MaterialActivo) => setMateriales(prev => [m, ...prev]), []);
   const updateMaterial = useCallback((id: string, updates: Partial<MaterialActivo>) =>
     setMateriales(prev => prev.map(m => m.id === id ? { ...m, ...updates } : m)), []);
+  const addDespacho = useCallback((d: DespachoJornada) => setDespachos(prev => [...prev, d]), []);
+  const updateDespacho = useCallback((id: string, updates: Partial<DespachoJornada>) =>
+    setDespachos(prev => prev.map(d => d.id === id ? { ...d, ...updates } : d)), []);
 
   // Refresh — re-read all operational data from localStorage
   const refreshFromStorage = useCallback(() => {
@@ -201,20 +211,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setEnsayos(fromStorage('ensayos', MOCK_ENSAYOS));
     setAuditLog(fromStorage('auditLog', []));
     setObservaciones(fromStorage('observaciones', []));
+    setDespachos(fromStorage('despachos', MOCK_DESPACHOS));
   }, []);
 
   const value: AppState = {
     empresas, plantas, usuarios, moldes, trabajadores, condiciones, materiales,
     jornadas, verificaciones, desmoldes, productoTerminado,
-    noConformidades, accionesCorrectivas, ensayos, auditLog, observaciones,
+    noConformidades, accionesCorrectivas, ensayos, auditLog, observaciones, despachos,
     getEmpresa, getPlanta, getPlantasByEmpresa, getJornada, getJornadasByPlanta,
     getVerificacionesByJornada, getDesmoldeByJornada, getProductoTerminadoByJornada,
     getNCByPlanta, getNCByJornada, getCondicionesByPlanta,
-    getEnsayosByPlanta, getMoldesByPlanta, getTrabajadoresByPlanta, getObservacionesByPlanta, getMaterialesByPlanta,
+    getEnsayosByPlanta, getMoldesByPlanta, getTrabajadoresByPlanta, getObservacionesByPlanta,
+    getMaterialesByPlanta, getDespachoByJornada,
     addJornada, updateJornada, addVerificacion, replaceVerificacionesByJornada, addDesmolde,
     addProductoTerminado, addNC, updateNC, addEnsayo,
     addCondicion, updateCondicion, deleteCondicion, addMolde, updateMolde, addTrabajador, updateTrabajador,
-    addAuditLog, addObservacion, addMaterial, updateMaterial,
+    addAuditLog, addObservacion, addMaterial, updateMaterial, addDespacho, updateDespacho,
     refreshFromStorage,
   };
 
