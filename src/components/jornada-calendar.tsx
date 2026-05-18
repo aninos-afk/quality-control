@@ -27,6 +27,7 @@ const estadoColors: Record<EstadoJornada, { bg: string; dot: string; border: str
   desmolde_registrado: { bg: 'bg-[oklch(0.7_0.15_30)]/15', dot: 'bg-[oklch(0.7_0.15_30)]', border: 'border-[oklch(0.7_0.15_30)]/30' },
   producto_terminado: { bg: 'bg-status-green/15', dot: 'bg-status-green', border: 'border-status-green/30' },
   cerrada: { bg: 'bg-status-green/20', dot: 'bg-status-green', border: 'border-status-green/40' },
+  despachada: { bg: 'bg-status-green/25', dot: 'bg-status-green', border: 'border-status-green/50' },
 };
 
 function getMonday(date: Date): Date {
