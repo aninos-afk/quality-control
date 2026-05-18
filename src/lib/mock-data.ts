@@ -1446,7 +1446,7 @@ export const MOCK_NC: NoConformidad[] = [
   {
     id: 'nc-a06', planta_id: 'plt-rcl', numero: 'RCL-2026-001', nivel: 'producto',
     fecha_deteccion: '2026-04-15', origen: 'desmolde', tipo_poste: '10-350',
-    tipo_defecto: 'despunte_desprendimiento', detalle: 'Despunte en arista superior del poste',
+    tipo_defecto: 'despunte', detalle: 'Despunte en arista superior del poste',
     accion_inmediata: 'Reparación con mortero', disposicion: 'reparar', apto_saesa: true,
     estado: 'cerrada', fecha_cierre: '2026-04-18', created_by: 'usr-rc-ep1',
   },
@@ -1454,7 +1454,7 @@ export const MOCK_NC: NoConformidad[] = [
   {
     id: 'nc-m01', planta_id: 'plt-tmc', numero: 'TMC-2026-004', nivel: 'producto', jornada_id: 'jrn-m02',
     fecha_deteccion: '2026-05-13', origen: 'desmolde', tipo_poste: '8.70-350',
-    molde_id: 'mol-1', tipo_defecto: 'despunte_desprendimiento', detalle: 'Despunte menor en base del poste detectado durante desmolde del lote TMC-260512-2',
+    molde_id: 'mol-1', tipo_defecto: 'despunte', detalle: 'Despunte menor en base del poste detectado durante desmolde del lote TMC-260512-2',
     accion_inmediata: 'Segregación del poste para evaluación', disposicion: 'reparar', apto_saesa: false,
     estado: 'abierta', created_by: 'usr-hs-ep1',
   },
