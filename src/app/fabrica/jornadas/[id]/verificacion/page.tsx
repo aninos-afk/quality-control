@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { PUNTOS_ARMADURA, PUNTOS_MOLDAJE, PUNTOS_HORMIGONADO } from '@/lib/constants';
 import type { PuntoVerificacion, VerificacionFabricacion, TipoPoste } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { getDocumentosPorSeccion } from '@/lib/documentos-tecnicos';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -48,7 +49,7 @@ interface PosteVerificacion {
 
 function emptyPuntos(): Record<string, PuntoVerificacion> {
   const p: Record<string, PuntoVerificacion> = {};
-  ALL_PUNTOS.forEach(pt => { p[pt.id] = null as any; });
+  ALL_PUNTOS.forEach(pt => { p[pt.id] = 'C'; });
   return p;
 }
 
@@ -107,6 +108,7 @@ export default function VerificacionPage({ params }: Props) {
   });
 
   const [activeIdx, setActiveIdx] = useState(0);
+  const [modalImg, setModalImg] = useState<{ url: string; label: string } | null>(null);
 
   if (!jornada) return <div className="text-center py-20 text-muted-foreground">Jornada no encontrada</div>;
 
@@ -193,10 +195,20 @@ export default function VerificacionPage({ params }: Props) {
   };
 
   const sections = [
-    { title: 'Armadura', points: PUNTOS_ARMADURA },
-    { title: 'Moldaje', points: PUNTOS_MOLDAJE },
-    { title: 'Hormigonado', points: PUNTOS_HORMIGONADO },
+    { title: 'Armadura', points: PUNTOS_ARMADURA, seccion: 'armadura' as const },
+    { title: 'Moldaje', points: PUNTOS_MOLDAJE, seccion: 'moldaje' as const },
+    { title: 'Hormigonado', points: PUNTOS_HORMIGONADO, seccion: 'hormigonado' as const },
   ];
+
+  // Documentos inline por punto específico (aparecen junto al texto del punto)
+  const DOCS_POR_PUNTO: Record<string, { url: string; label: string; tipo: 'pdf' | 'imagen' }[]> = {
+    arm_diametro_cantidades: [
+      { url: '/docs/hormisur/plano-estructural.pdf', label: 'Ver plano', tipo: 'pdf' },
+    ],
+    arm_sin_oxido: [
+      { url: '/docs/hormisur/oxidacion-referencia.jpg', label: 'Ver oxidación', tipo: 'imagen' },
+    ],
+  };
 
   const current = postes[activeIdx];
   const moldesParaTipo = allMoldes.filter(m => m.activo && m.tipo_poste === current?.tipo_poste);
@@ -212,6 +224,25 @@ export default function VerificacionPage({ params }: Props) {
 
   return (
     <div className="space-y-6">
+      {/* Modal imagen referencia */}
+      {modalImg && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+          onClick={() => setModalImg(null)}
+        >
+          <div className="relative max-w-3xl w-full" onClick={e => e.stopPropagation()}>
+            <button
+              onClick={() => setModalImg(null)}
+              className="absolute -top-3 -right-3 z-10 w-8 h-8 rounded-full bg-card border border-border flex items-center justify-center text-sm font-bold hover:bg-muted"
+            >
+              ✕
+            </button>
+            <p className="text-white text-sm font-medium mb-2">{modalImg.label}</p>
+            <img src={modalImg.url} alt={modalImg.label} className="w-full rounded-lg shadow-xl" />
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Verificaci&oacute;n de Fabricaci&oacute;n</h1>
@@ -431,30 +462,69 @@ export default function VerificacionPage({ params }: Props) {
           {/* 20 puntos de verificacion */}
           {sections.map((section, sIdx) => {
             const allCumple = isSectionAllCumple(section.points);
+            const docsSeccion = getDocumentosPorSeccion(planta?.id || '', section.seccion);
             return (
             <Card key={section.title} className={`bg-card/50 border-border/50 ${sIdx % 2 === 1 ? 'bg-muted/5' : ''}`}>
               <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
                   <CardTitle className="text-base">{section.title} ({section.points.length} puntos)</CardTitle>
-                  <button
-                    onClick={() => setSectionCumple(section.points)}
-                    className={cn(
-                      'px-3 py-1.5 rounded-lg text-xs font-medium border transition-all duration-200 flex items-center gap-1.5',
-                      allCumple
-                        ? 'bg-status-green/15 border-status-green/30 text-status-green'
-                        : 'bg-card border-border/50 hover:bg-status-green/10 hover:border-status-green/30 hover:text-status-green text-muted-foreground'
-                    )}
-                  >
-                    {allCumple ? '✓' : '☐'} Cumple los {section.points.length}
-                  </button>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {docsSeccion.map(doc => (
+                      <a
+                        key={doc.id}
+                        href={doc.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3 py-1.5 rounded-lg text-xs font-medium border transition-all duration-200 flex items-center gap-1.5 bg-card border-border/50 hover:bg-primary/10 hover:border-primary/30 hover:text-primary text-muted-foreground"
+                      >
+                        <span>&#128196;</span> {doc.label}
+                      </a>
+                    ))}
+                    <button
+                      onClick={() => setSectionCumple(section.points)}
+                      className={cn(
+                        'px-3 py-1.5 rounded-lg text-xs font-medium border transition-all duration-200 flex items-center gap-1.5',
+                        allCumple
+                          ? 'bg-status-green/15 border-status-green/30 text-status-green'
+                          : 'bg-card border-border/50 hover:bg-status-green/10 hover:border-status-green/30 hover:text-status-green text-muted-foreground'
+                      )}
+                    >
+                      {allCumple ? '✓' : '☐'} Cumple los {section.points.length}
+                    </button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-1">
-                {section.points.map((punto, pIdx) => (
+                {section.points.map((punto, pIdx) => {
+                  const docsInline = DOCS_POR_PUNTO[punto.id] || [];
+                  return (
                   <div key={punto.id} className="flex items-center justify-between py-3 px-2 rounded-lg hover:bg-muted/10">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       <span className="text-xs text-muted-foreground w-5 text-right shrink-0">{pIdx + 1}.</span>
-                      <span className="text-sm">{punto.texto}</span>
+                      <div className="flex items-center gap-2 flex-wrap min-w-0">
+                        <span className="text-sm">{punto.texto}</span>
+                        {docsInline.map(doc => (
+                          doc.tipo === 'imagen' ? (
+                            <button
+                              key={doc.url}
+                              onClick={() => setModalImg({ url: doc.url, label: doc.label })}
+                              className="px-2 py-0.5 rounded text-[11px] font-medium border border-amber-500/30 bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 transition-all shrink-0 flex items-center gap-1"
+                            >
+                              <span>&#128247;</span> {doc.label}
+                            </button>
+                          ) : (
+                            <a
+                              key={doc.url}
+                              href={doc.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-2 py-0.5 rounded text-[11px] font-medium border border-border/50 bg-card hover:bg-primary/10 hover:border-primary/30 hover:text-primary text-muted-foreground transition-all shrink-0 flex items-center gap-1"
+                            >
+                              <span>&#128196;</span> {doc.label}
+                            </a>
+                          )
+                        ))}
+                      </div>
                     </div>
                     <div className="flex gap-1.5 shrink-0 ml-4">
                       {PUNTO_BUTTONS.map(btn => (
@@ -471,7 +541,8 @@ export default function VerificacionPage({ params }: Props) {
                       ))}
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </CardContent>
             </Card>
           );
@@ -570,6 +641,7 @@ export default function VerificacionPage({ params }: Props) {
           Guardar ({totalPostes} poste{totalPostes !== 1 ? 's' : ''})
         </Button>
       </div>
+
     </div>
   );
 }
