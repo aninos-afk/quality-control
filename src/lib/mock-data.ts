@@ -1530,12 +1530,37 @@ export const MOCK_ENSAYOS: EnsayoCompresion[] = [
   { id: 'ens-33', planta_id: 'plt-rcl', jornada_id: 'jrn-rc02', fecha_muestra: '2026-05-14', tipo_hormigon: 'G25', resultado_7d_mpa: 22.0, resultado_28d_mpa: 32.5, laboratorio: 'Lab. Materiales Coyhaique', cumple: true, created_by: 'usr-rc-ec' },
 ];
 
-import type { DespachoJornada } from './types';
+import type { Despacho, PosteDespachado, TipoPoste } from './types';
 
-export const MOCK_DESPACHOS: DespachoJornada[] = [
+// Helper para mock: poste con los 5 puntos de inspección en true (caso normal).
+// En el código real (UI), cuando el despachador marca cualquier punto como false,
+// la fila se elimina automáticamente (poste bajado del camión).
+function postePack(
+  codigo: string,
+  tipo: TipoPoste,
+  jornada_origen_id?: string,
+  fecha_fabricacion?: string,
+  extras?: Partial<PosteDespachado>,
+): PosteDespachado {
+  return {
+    codigo_plaquita: codigo,
+    tipo_poste: tipo,
+    fecha_fabricacion,
+    jornada_origen_id,
+    insp_punto_verde: true,
+    insp_armadura_vista: true,
+    insp_oxido: true,
+    insp_fisuras_mayores: true,
+    insp_danos_golpes: true,
+    ...extras,
+  };
+}
+
+// Cada poste es un item individual con plaquita única y trazabilidad opcional a su jornada de origen.
+// Un mismo despacho puede mezclar postes de distintos tipos provenientes de distintas jornadas.
+export const MOCK_DESPACHOS: Despacho[] = [
   {
     id: 'dsp-1',
-    jornada_id: 'jrn-1',
     planta_id: 'plt-tmc',
     fecha_despacho: '2026-02-20',
     numero_guia: 'G-2026-0041',
@@ -1544,8 +1569,18 @@ export const MOCK_DESPACHOS: DespachoJornada[] = [
     patente_camion: 'FKRB-21',
     nombre_chofer: 'Rodrigo Mena',
     postes: [
-      { tipo_poste: '10-600', cantidad: 8, codigos_plaquita: ['TMC-001','TMC-002','TMC-003','TMC-004','TMC-005','TMC-006','TMC-007','TMC-008'] },
-      { tipo_poste: '11.5-1000', cantidad: 4, codigos_plaquita: ['TMC-009','TMC-010','TMC-011','TMC-012'] },
+      postePack('TMC-001', '10-600', 'jrn-1', '2026-02-10'),
+      postePack('TMC-002', '10-600', 'jrn-1', '2026-02-10'),
+      postePack('TMC-003', '10-600', 'jrn-1', '2026-02-10'),
+      postePack('TMC-004', '10-600', 'jrn-1', '2026-02-10'),
+      postePack('TMC-005', '10-600', 'jrn-1', '2026-02-10'),
+      postePack('TMC-006', '10-600', 'jrn-1', '2026-02-10'),
+      postePack('TMC-007', '10-600', 'jrn-1', '2026-02-10'),
+      postePack('TMC-008', '10-600', 'jrn-1', '2026-02-10'),
+      postePack('TMC-009', '11.5-1000', 'jrn-1', '2026-02-10'),
+      postePack('TMC-010', '11.5-1000', 'jrn-1', '2026-02-10'),
+      postePack('TMC-011', '11.5-1000', 'jrn-1', '2026-02-10'),
+      postePack('TMC-012', '11.5-1000', 'jrn-1', '2026-02-10'),
     ],
     fotos_carga_urls: [],
     observaciones_despacho: 'Carga verificada conforme. Postes estibados con listones.',
@@ -1555,11 +1590,10 @@ export const MOCK_DESPACHOS: DespachoJornada[] = [
     fotos_recepcion_urls: [],
     observaciones_recepcion: 'Recibido conforme. Sin daños.',
     created_by: 'usr-hs-jp',
-    created_at: '2026-02-20',
+    created_at: '2026-02-20T15:30:00Z',
   },
   {
     id: 'dsp-2',
-    jornada_id: 'jrn-a01',
     planta_id: 'plt-tmc',
     fecha_despacho: '2026-04-10',
     numero_guia: 'G-2026-0078',
@@ -1567,8 +1601,20 @@ export const MOCK_DESPACHOS: DespachoJornada[] = [
     transportista: 'Transportes del Sur Ltda.',
     patente_camion: 'HJKL-45',
     nombre_chofer: 'Pedro Salinas',
+    // Camión mixto: postes de distintas jornadas y tipos
     postes: [
-      { tipo_poste: '10-350', cantidad: 12, codigos_plaquita: ['TMC-045','TMC-046','TMC-047','TMC-048','TMC-049','TMC-050','TMC-051','TMC-052','TMC-053','TMC-054','TMC-055','TMC-056'] },
+      postePack('TMC-045', '10-350', 'jrn-a01', '2026-03-28'),
+      postePack('TMC-046', '10-350', 'jrn-a01', '2026-03-28'),
+      postePack('TMC-047', '10-350', 'jrn-a01', '2026-03-28'),
+      postePack('TMC-048', '10-350', 'jrn-a01', '2026-03-28'),
+      postePack('TMC-049', '8.70-350', 'jrn-a02', '2026-03-30'),
+      postePack('TMC-050', '8.70-350', 'jrn-a02', '2026-03-30'),
+      postePack('TMC-051', '10-350', 'jrn-a01', '2026-03-28', { observaciones: 'Despunte en extremo inferior detectado en recepción' }),
+      postePack('TMC-052', '10-350', 'jrn-a01', '2026-03-28', { observaciones: 'Despunte en extremo inferior detectado en recepción' }),
+      postePack('TMC-053', '11.5-600', 'jrn-a03', '2026-04-02'),
+      postePack('TMC-054', '11.5-600', 'jrn-a03', '2026-04-02'),
+      postePack('TMC-055', '11.5-600', 'jrn-a03', '2026-04-02'),
+      postePack('TMC-056', '11.5-600', 'jrn-a03', '2026-04-02'),
     ],
     fotos_carga_urls: [],
     observaciones_despacho: 'Carga revisada. Estiba correcta con separadores.',
@@ -1579,11 +1625,10 @@ export const MOCK_DESPACHOS: DespachoJornada[] = [
     observaciones_recepcion: 'Se detectaron 2 postes con despuntes en extremo inferior.',
     danos_detectados: 'Postes TMC-051 y TMC-052 presentan despunte en extremo inferior. Se adjuntan fotos en recepción. Transportista responsable según fotos de carga.',
     created_by: 'usr-hs-jp',
-    created_at: '2026-04-10',
+    created_at: '2026-04-10T11:00:00Z',
   },
   {
     id: 'dsp-3',
-    jornada_id: 'jrn-7',
     planta_id: 'plt-hbl',
     fecha_despacho: '2026-03-05',
     numero_guia: 'G-2026-0055',
@@ -1592,13 +1637,18 @@ export const MOCK_DESPACHOS: DespachoJornada[] = [
     patente_camion: 'ABCD-99',
     nombre_chofer: 'Mario Vargas',
     postes: [
-      { tipo_poste: '13.5-1000', cantidad: 6, codigos_plaquita: ['HBL-031','HBL-032','HBL-033','HBL-034','HBL-035','HBL-036'] },
+      postePack('HBL-031', '13.5-1000', 'jrn-7', '2026-02-25'),
+      postePack('HBL-032', '13.5-1000', 'jrn-7', '2026-02-25'),
+      postePack('HBL-033', '13.5-1000', 'jrn-7', '2026-02-25'),
+      postePack('HBL-034', '13.5-1000', 'jrn-7', '2026-02-25'),
+      postePack('HBL-035', '13.5-1000', 'jrn-7', '2026-02-25'),
+      postePack('HBL-036', '13.5-1000', 'jrn-7', '2026-02-25'),
     ],
     fotos_carga_urls: [],
     observaciones_despacho: 'Despacho normal. Sin observaciones.',
     estado_recepcion: 'pendiente',
     fotos_recepcion_urls: [],
     created_by: 'usr-hb-jp',
-    created_at: '2026-03-05',
+    created_at: '2026-03-05T09:15:00Z',
   },
 ];

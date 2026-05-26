@@ -131,8 +131,8 @@ export default function DashboardEjecutivo() {
     ).size;
     const totalPlantas = plantasVisibles.length;
 
-    // % jornadas con ciclo completo (cerradas o despachadas)
-    const jornadasCompletas = jornadas.filter(j => j.estado === 'cerrada' || j.estado === 'despachada').length;
+    // % jornadas con ciclo completo (cerradas)
+    const jornadasCompletas = jornadas.filter(j => j.estado === 'cerrada').length;
     const pctCicloCompleto  = jornadas.length > 0 ? Math.round(jornadasCompletas / jornadas.length * 100) : 0;
 
     // Ensayos al día (planta con ensayo en los últimos 35 días)
@@ -178,7 +178,7 @@ export default function DashboardEjecutivo() {
       const emp        = empresas.find(e => e.id === p.empresa_id);
       const pJornadas  = jornadas.filter(j => j.planta_id === p.id);
       const activa     = pJornadas.some(j => j.fecha.startsWith(mesActual));
-      const completas  = pJornadas.filter(j => j.estado === 'cerrada' || j.estado === 'despachada').length;
+      const completas  = pJornadas.filter(j => j.estado === 'cerrada').length;
       const pctCompleto = pJornadas.length > 0 ? Math.round(completas / pJornadas.length * 100) : 0;
 
       const pEnsayos   = ensayos.filter(e => e.planta_id === p.id);
@@ -220,7 +220,7 @@ export default function DashboardEjecutivo() {
       const key = `${MESES[parseInt(m) - 1]} ${y.slice(2)}`;
       if (!meses[key]) meses[key] = { total: 0, completas: 0 };
       meses[key].total++;
-      if (j.estado === 'cerrada' || j.estado === 'despachada') meses[key].completas++;
+      if (j.estado === 'cerrada') meses[key].completas++;
     });
     const sortedKeys = Object.keys(meses).sort((a, b) => {
       const [ma, ya] = a.split(' ');

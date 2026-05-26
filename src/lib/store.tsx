@@ -6,7 +6,7 @@ import type {
   Jornada, VerificacionFabricacion, RegistroDesmolde,
   RegistroProductoTerminado, NoConformidad, AccionCorrectiva,
   EnsayoCompresion, AuditLogEntry, ObservacionAuditor, Usuario,
-  MaterialActivo, DespachoJornada,
+  MaterialActivo, Despacho,
 } from './types';
 import {
   MOCK_EMPRESAS, MOCK_PLANTAS, MOCK_USUARIOS, MOCK_MOLDES, MOCK_TRABAJADORES,
@@ -20,7 +20,7 @@ import {
 // Versión: incrementar si cambia el schema de datos
 // para forzar reinicio limpio en clientes existentes.
 // =============================================
-const STORAGE_VERSION = 'qc_v13';
+const STORAGE_VERSION = 'qc_v15';
 const SK = (key: string) => `${STORAGE_VERSION}_${key}`;
 
 function fromStorage<T>(key: string, fallback: T): T {
@@ -61,7 +61,7 @@ interface AppState {
   ensayos: EnsayoCompresion[];
   auditLog: AuditLogEntry[];
   observaciones: ObservacionAuditor[];
-  despachos: DespachoJornada[];
+  despachos: Despacho[];
   // Helpers
   getEmpresa: (id: string) => Empresa | undefined;
   getPlanta: (id: string) => Planta | undefined;
@@ -79,7 +79,13 @@ interface AppState {
   getTrabajadoresByPlanta: (plantaId: string) => Trabajador[];
   getObservacionesByPlanta: (plantaId: string) => ObservacionAuditor[];
   getMaterialesByPlanta: (plantaId: string) => MaterialActivo[];
-  getDespachoByJornada: (jornadaId: string) => DespachoJornada | undefined;
+  // Despacho — entidad independiente; consultas por planta o por trazabilidad inversa
+  getDespacho: (id: string) => Despacho | undefined;
+  getDespachosByPlanta: (plantaId: string) => Despacho[];
+  // Devuelve los despachos que contienen al menos un poste proveniente de la jornada dada
+  getDespachosByJornadaOrigen: (jornadaId: string) => Despacho[];
+  // Devuelve el despacho que contiene un poste con la plaquita dada (si existe)
+  getDespachoByPlaquita: (codigoPlaquita: string) => Despacho | undefined;
   // Mutations
   addJornada: (jornada: Jornada) => void;
   updateJornada: (id: string, updates: Partial<Jornada>) => void;
@@ -101,8 +107,8 @@ interface AppState {
   addObservacion: (obs: ObservacionAuditor) => void;
   addMaterial: (material: MaterialActivo) => void;
   updateMaterial: (id: string, updates: Partial<MaterialActivo>) => void;
-  addDespacho: (despacho: DespachoJornada) => void;
-  updateDespacho: (id: string, updates: Partial<DespachoJornada>) => void;
+  addDespacho: (despacho: Despacho) => void;
+  updateDespacho: (id: string, updates: Partial<Despacho>) => void;
   // Refresh
   refreshFromStorage: () => void;
 }
@@ -129,7 +135,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [ensayos, setEnsayos] = useState<EnsayoCompresion[]>(() => fromStorage('ensayos', MOCK_ENSAYOS));
   const [auditLog, setAuditLog] = useState<AuditLogEntry[]>(() => fromStorage('auditLog', []));
   const [observaciones, setObservaciones] = useState<ObservacionAuditor[]>(() => fromStorage('observaciones', []));
-  const [despachos, setDespachos] = useState<DespachoJornada[]>(() => fromStorage('despachos', MOCK_DESPACHOS));
+  const [despachos, setDespachos] = useState<Despacho[]>(() => fromStorage('despachos', MOCK_DESPACHOS));
 
   // Persistir automáticamente cada colección cuando cambia
   useEffect(() => { toStorage('moldes', moldes); }, [moldes]);
@@ -163,7 +169,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const getTrabajadoresByPlanta = useCallback((pId: string) => trabajadores.filter(t => t.planta_id === pId), [trabajadores]);
   const getObservacionesByPlanta = useCallback((pId: string) => observaciones.filter(o => o.planta_id === pId), [observaciones]);
   const getMaterialesByPlanta = useCallback((pId: string) => materiales.filter(m => m.planta_id === pId), [materiales]);
-  const getDespachoByJornada = useCallback((jId: string) => despachos.find(d => d.jornada_id === jId), [despachos]);
+  const getDespacho = useCallback((id: string) => despachos.find(d => d.id === id), [despachos]);
+  const getDespachosByPlanta = useCallback((pId: string) =>
+    despachos.filter(d => d.planta_id === pId).sort((a, b) => b.fecha_despacho.localeCompare(a.fecha_despacho)),
+    [despachos]);
+  const getDespachosByJornadaOrigen = useCallback((jId: string) =>
+    despachos.filter(d => d.postes.some(p => p.jornada_origen_id === jId)),
+    [despachos]);
+  const getDespachoByPlaquita = useCallback((codigo: string) =>
+    despachos.find(d => d.postes.some(p => p.codigo_plaquita === codigo)),
+    [despachos]);
 
   // Mutations
   const addJornada = useCallback((j: Jornada) => setJornadas(prev => [j, ...prev]), []);
@@ -193,8 +208,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const addMaterial = useCallback((m: MaterialActivo) => setMateriales(prev => [m, ...prev]), []);
   const updateMaterial = useCallback((id: string, updates: Partial<MaterialActivo>) =>
     setMateriales(prev => prev.map(m => m.id === id ? { ...m, ...updates } : m)), []);
-  const addDespacho = useCallback((d: DespachoJornada) => setDespachos(prev => [...prev, d]), []);
-  const updateDespacho = useCallback((id: string, updates: Partial<DespachoJornada>) =>
+  const addDespacho = useCallback((d: Despacho) => setDespachos(prev => [d, ...prev]), []);
+  const updateDespacho = useCallback((id: string, updates: Partial<Despacho>) =>
     setDespachos(prev => prev.map(d => d.id === id ? { ...d, ...updates } : d)), []);
 
   // Refresh — re-read all operational data from localStorage
@@ -222,7 +237,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     getVerificacionesByJornada, getDesmoldeByJornada, getProductoTerminadoByJornada,
     getNCByPlanta, getNCByJornada, getCondicionesByPlanta,
     getEnsayosByPlanta, getMoldesByPlanta, getTrabajadoresByPlanta, getObservacionesByPlanta,
-    getMaterialesByPlanta, getDespachoByJornada,
+    getMaterialesByPlanta,
+    getDespacho, getDespachosByPlanta, getDespachosByJornadaOrigen, getDespachoByPlaquita,
     addJornada, updateJornada, addVerificacion, replaceVerificacionesByJornada, addDesmolde,
     addProductoTerminado, addNC, updateNC, addEnsayo,
     addCondicion, updateCondicion, deleteCondicion, addMolde, updateMolde, addTrabajador, updateTrabajador,

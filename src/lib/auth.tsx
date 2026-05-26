@@ -29,7 +29,10 @@ export type Accion =
   | 'ver_audit_log'
   | 'gestionar_materiales'
   | 'editar_jornada'
-  | 'toggle_visible_externo';
+  | 'toggle_visible_externo'
+  | 'ver_despachos'
+  | 'crear_despacho'
+  | 'editar_despacho';
 
 const PERMISOS_POR_ROL: Record<RolUsuario, Accion[]> = {
   // Administrador de plataforma: acceso total a todo
@@ -43,12 +46,14 @@ const PERMISOS_POR_ROL: Record<RolUsuario, Accion[]> = {
     'ver_todas_plantas', 'ver_todas_empresas',
     'dejar_observaciones', 'ver_audit_log',
     'gestionar_materiales', 'editar_jornada', 'toggle_visible_externo',
+    'ver_despachos', 'crear_despacho', 'editar_despacho',
   ],
   // Auditor externo (mandante/SAESA): solo lectura de lo que la fábrica expone
   auditor_externo: [
     'ver_jornadas',
     'ver_nc',
     'ver_ensayos',
+    'ver_despachos',
   ],
   encargado_calidad: [
     'ver_condiciones', 'editar_condiciones',
@@ -60,6 +65,7 @@ const PERMISOS_POR_ROL: Record<RolUsuario, Accion[]> = {
     'ver_todas_plantas',
     'gestionar_materiales',
     'editar_jornada', 'toggle_visible_externo',
+    'ver_despachos', 'crear_despacho', 'editar_despacho',
   ],
   jefe_planta: [
     'ver_condiciones', 'editar_condiciones',
@@ -71,12 +77,15 @@ const PERMISOS_POR_ROL: Record<RolUsuario, Accion[]> = {
     'ver_configuracion', 'editar_configuracion',
     'gestionar_materiales',
     'editar_jornada', 'toggle_visible_externo',
+    'ver_despachos', 'crear_despacho', 'editar_despacho',
   ],
   encargado_patio: [
     'ver_jornadas', 'crear_jornada',
     'verificar_fabricacion', 'registrar_desmolde', 'registrar_producto_terminado',
     'ver_nc',
     'gestionar_materiales',
+    // Patio es el rol natural para gestionar despachos: están en patio cuando llega el camión
+    'ver_despachos', 'crear_despacho', 'editar_despacho',
   ],
 };
 

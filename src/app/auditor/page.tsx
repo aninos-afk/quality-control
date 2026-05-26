@@ -425,7 +425,7 @@ function PopupJornada({
 
 // ─── Vista Auditor Externo ───────────────────────────────
 function VistaAuditorExterno() {
-  const { jornadas, verificaciones, ensayos, empresas, plantas, condiciones, noConformidades, refreshFromStorage } = useApp();
+  const { jornadas, verificaciones, ensayos, empresas, plantas, condiciones, noConformidades, productoTerminado, desmoldes, refreshFromStorage } = useApp();
   const searchParams = useSearchParams();
   const router = useRouter();
   const vista = searchParams.get('vista') === 'calendario' ? 'calendario' : 'consolidada';
@@ -646,64 +646,169 @@ function VistaAuditorExterno() {
             const empJornadas = jornadasVisibles.filter(j => empPlantas.some(p => p.id === j.planta_id));
             if (empJornadas.length === 0) return null;
 
+            const plantasActivas = empPlantas.filter(p => empJornadas.some(j => j.planta_id === p.id));
+
+            // ── Última actividad ──
+            const ultimaJornada = empJornadas
+              .slice()
+              .sort((a, b) => b.fecha.localeCompare(a.fecha))[0];
+            const diasDesdeUltimaJornada = ultimaJornada
+              ? Math.floor((Date.now() - new Date(ultimaJornada.fecha).getTime()) / (1000 * 60 * 60 * 24))
+              : null;
+
+            // ── Producto terminado ──
+            const ptEmpresa = empJornadas
+              .map(j => productoTerminado.find(pt => pt.jornada_id === j.id))
+              .filter(Boolean);
+            const ptConformes = ptEmpresa.filter(pt => pt!.resultado === 'conforme').length;
+            const ptTotal = ptEmpresa.length;
+            const pctPT = ptTotal > 0 ? Math.round((ptConformes / ptTotal) * 100) : null;
+
+            // ── Ciclo completo ──
+            // Jornada con ciclo completo: tiene verificación + desmolde + PT + ensayo
+            const cicloCompleto = empJornadas.filter(j => {
+              const tieneVerif = verificaciones.some(v => v.jornada_id === j.id);
+              const tieneDesmolde = desmoldes.some(d => d.jornada_id === j.id);
+              const tienePT = productoTerminado.some(pt => pt.jornada_id === j.id);
+              const tieneEnsayo = ensayos.some(e => e.jornada_id === j.id);
+              return tieneVerif && tieneDesmolde && tienePT && tieneEnsayo;
+            }).length;
+            const pctCiclo = Math.round((cicloCompleto / empJornadas.length) * 100);
+
+            // ── Conformidad de proceso (dato secundario) ──
             const empVerifs = empJornadas.flatMap(j => verificaciones.filter(v => v.jornada_id === j.id));
             const empConformidad = empVerifs.length > 0
               ? Math.round(empVerifs.filter(v => v.resultado === 'conforme').length / empVerifs.length * 100)
               : 100;
+
+            // ── Último ensayo ──
             const ultimoEnsayo = ensayos
               .filter(e => empPlantas.some(p => p.id === e.planta_id) && e.jornada_id)
               .sort((a, b) => b.fecha_muestra.localeCompare(a.fecha_muestra))[0];
 
-            const plantasActivas = empPlantas.filter(p => empJornadas.some(j => j.planta_id === p.id));
-
             return (
               <Card key={emp.id} className="bg-card/60 border-border/40 hover:border-primary/30 transition-all duration-200">
                 <CardContent className="p-5 space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-lg font-bold text-primary">
-                      {emp.nombre.charAt(0)}
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-sm">{emp.nombre}</h3>
-                      <p className="text-xs text-muted-foreground">
-                        {plantasActivas.map(p => p.nombre.replace('Planta ', '')).join(' · ')}
-                      </p>
-                    </div>
-                  </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="text-center p-3 rounded-xl bg-muted/30">
-                      <p className="text-2xl font-bold">{empJornadas.length}</p>
-                      <p className="text-[10px] text-muted-foreground mt-0.5">jornadas publicadas</p>
+                  {/* Encabezado empresa */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-lg font-bold text-primary">
+                        {emp.nombre.charAt(0)}
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-sm">{emp.nombre}</h3>
+                        <p className="text-xs text-muted-foreground">
+                          {plantasActivas.map(p => p.nombre.replace('Planta ', '')).join(' · ')}
+                        </p>
+                      </div>
                     </div>
-                    <div className={`text-center p-3 rounded-xl ${empConformidad === 100 ? 'bg-status-green/10' : 'bg-status-amber/10'}`}>
-                      <p className={`text-2xl font-bold ${empConformidad === 100 ? 'text-status-green' : 'text-status-amber'}`}>{empConformidad}%</p>
-                      <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center justify-center gap-1">
-                        conformidad
-                        <span
-                          title="Porcentaje de puntos de verificación de proceso (armadura, moldaje, hormigonado) calificados como 'conforme' sobre el total registrado en las jornadas publicadas."
-                          className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-muted-foreground/30 text-muted-foreground cursor-help text-[9px] font-bold leading-none"
-                        >?</span>
-                      </p>
-                    </div>
-                  </div>
-
-                  {ultimoEnsayo && (
-                    <div className="flex items-center justify-between text-xs p-2.5 rounded-lg bg-muted/20 border border-border/20">
-                      <span className="text-muted-foreground">Último ensayo 28d</span>
-                      <span className={`font-bold ${ultimoEnsayo.cumple ? 'text-status-green' : 'text-status-red'}`}>
-                        {ultimoEnsayo.resultado_28d_mpa} MPa · {ultimoEnsayo.tipo_hormigon} {ultimoEnsayo.cumple ? '✅' : '❌'}
+                    {/* Última actividad */}
+                    {diasDesdeUltimaJornada !== null && (
+                      <span className={`text-[10px] px-2 py-1 rounded-lg font-medium shrink-0 ${
+                        diasDesdeUltimaJornada <= 7
+                          ? 'bg-status-green/10 text-status-green'
+                          : diasDesdeUltimaJornada <= 21
+                            ? 'bg-status-amber/10 text-status-amber'
+                            : 'bg-status-red/10 text-status-red'
+                      }`}>
+                        {diasDesdeUltimaJornada === 0 ? 'Hoy' : `Hace ${diasDesdeUltimaJornada}d`}
                       </span>
-                    </div>
-                  )}
+                    )}
+                  </div>
 
+                  {/* ── PRIMERA LÍNEA: calidad del producto ── */}
+                  <div className="space-y-2">
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Calidad del producto</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {/* PT conforme */}
+                      <div className={`p-3 rounded-xl text-center ${
+                        pctPT === null ? 'bg-muted/20' :
+                        pctPT === 100 ? 'bg-status-green/10' :
+                        pctPT >= 80 ? 'bg-status-amber/10' : 'bg-status-red/10'
+                      }`}>
+                        {pctPT !== null ? (
+                          <>
+                            <p className={`text-2xl font-bold ${
+                              pctPT === 100 ? 'text-status-green' :
+                              pctPT >= 80 ? 'text-status-amber' : 'text-status-red'
+                            }`}>{pctPT}%</p>
+                            <p className="text-[10px] text-muted-foreground mt-0.5">PT conforme</p>
+                            <p className="text-[10px] text-muted-foreground">{ptConformes}/{ptTotal} postes</p>
+                          </>
+                        ) : (
+                          <>
+                            <p className="text-lg text-muted-foreground/40 font-bold">—</p>
+                            <p className="text-[10px] text-muted-foreground mt-0.5">Sin PT registrado</p>
+                          </>
+                        )}
+                      </div>
+                      {/* Último ensayo */}
+                      <div className={`p-3 rounded-xl text-center ${
+                        !ultimoEnsayo ? 'bg-muted/20' :
+                        ultimoEnsayo.cumple ? 'bg-status-green/10' : 'bg-status-red/10'
+                      }`}>
+                        {ultimoEnsayo ? (
+                          <>
+                            <p className={`text-2xl font-bold ${ultimoEnsayo.cumple ? 'text-status-green' : 'text-status-red'}`}>
+                              {ultimoEnsayo.resultado_28d_mpa}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground mt-0.5">MPa 28d {ultimoEnsayo.cumple ? '✅' : '❌'}</p>
+                            <p className="text-[10px] text-muted-foreground">{ultimoEnsayo.tipo_hormigon}</p>
+                          </>
+                        ) : (
+                          <>
+                            <p className="text-lg text-muted-foreground/40 font-bold">—</p>
+                            <p className="text-[10px] text-muted-foreground mt-0.5">Sin ensayo</p>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* ── SEGUNDA LÍNEA: gestión del proceso ── */}
+                  <div className="space-y-2">
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Gestión del proceso</p>
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                      {/* Jornadas */}
+                      <div className="p-2.5 rounded-lg bg-muted/20">
+                        <p className="text-lg font-bold">{empJornadas.length}</p>
+                        <p className="text-[10px] text-muted-foreground leading-tight">jornadas</p>
+                      </div>
+                      {/* Ciclo completo */}
+                      <div className={`p-2.5 rounded-lg ${pctCiclo === 100 ? 'bg-status-green/10' : pctCiclo >= 60 ? 'bg-status-amber/10' : 'bg-muted/20'}`}>
+                        <p className={`text-lg font-bold ${pctCiclo === 100 ? 'text-status-green' : pctCiclo >= 60 ? 'text-status-amber' : 'text-foreground'}`}>
+                          {pctCiclo}%
+                        </p>
+                        <p className="text-[10px] text-muted-foreground leading-tight">
+                          ciclo
+                          <span
+                            title="Porcentaje de jornadas publicadas que tienen registrados todos los pasos: verificación de fabricación, desmolde, producto terminado y ensayo de compresión."
+                            className="inline-flex items-center justify-center w-3 h-3 rounded-full bg-muted-foreground/30 text-muted-foreground cursor-help text-[8px] font-bold leading-none ml-0.5"
+                          >?</span>
+                        </p>
+                      </div>
+                      {/* Conformidad de proceso */}
+                      <div className={`p-2.5 rounded-lg ${empConformidad === 100 ? 'bg-muted/20' : 'bg-status-amber/10'}`}>
+                        <p className={`text-lg font-bold ${empConformidad === 100 ? 'text-foreground' : 'text-status-amber'}`}>
+                          {empConformidad}%
+                        </p>
+                        <p className="text-[10px] text-muted-foreground leading-tight">
+                          proceso
+                          <span
+                            title="Porcentaje de puntos de verificación de proceso (armadura, moldaje, hormigonado) calificados como conforme sobre el total registrado."
+                            className="inline-flex items-center justify-center w-3 h-3 rounded-full bg-muted-foreground/30 text-muted-foreground cursor-help text-[8px] font-bold leading-none ml-0.5"
+                          >?</span>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Pie: links */}
                   <div className="text-xs text-muted-foreground flex flex-col gap-2 pt-1 border-t border-border/20">
                     <div className="flex items-center justify-between">
                       <span>{plantasActivas.length} planta{plantasActivas.length !== 1 ? 's' : ''} activa{plantasActivas.length !== 1 ? 's' : ''}</span>
-                      <button
-                        onClick={() => irACalendario(emp.id)}
-                        className="text-primary hover:underline"
-                      >
+                      <button onClick={() => irACalendario(emp.id)} className="text-primary hover:underline">
                         Ver calendario →
                       </button>
                     </div>
@@ -719,6 +824,7 @@ function VistaAuditorExterno() {
                       ))}
                     </div>
                   </div>
+
                 </CardContent>
               </Card>
             );

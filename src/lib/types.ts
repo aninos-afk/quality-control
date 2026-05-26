@@ -6,7 +6,7 @@ export type TipoPoste = '8.70-350' | '10-350' | '10-600' | '11.5-600' | '11.5-10
 
 export type DestinoProduccion = 'SAESA' | 'otro_cliente' | 'stock';
 
-export type EstadoJornada = 'abierta' | 'fabricacion_verificada' | 'desmolde_registrado' | 'producto_terminado' | 'cerrada' | 'despachada';
+export type EstadoJornada = 'abierta' | 'fabricacion_verificada' | 'desmolde_registrado' | 'producto_terminado' | 'cerrada';
 
 export type PuntoVerificacion = 'C' | 'NC' | 'NA' | null;
 
@@ -281,37 +281,78 @@ export interface EnsayoCompresion {
 // =============================================
 // DESPACHO
 // =============================================
+// El Despacho es una entidad independiente del proceso productivo (Jornada).
+// Un camión llega a la fábrica un día dado y carga postes que pueden provenir
+// de jornadas distintas y ser de tipos distintos (8, 10, 11, 13...).
+// La unidad de trazabilidad es el POSTE, identificado por su código de plaquita
+// física, que se coloca al momento del despacho — cierra el ciclo de vida del
+// poste dentro de la fábrica.
 
 export type EstadoRecepcion = 'pendiente' | 'conforme' | 'con_danos';
 
+// Un poste individual que viaja en el camión. Identidad propia por su plaquita.
+//
+// Inspección visual del despachador (5 puntos SAESA):
+// - Todos arrancan en TRUE (= conforme, sin hallazgo).
+// - Si el despachador marca alguno en FALSE, el poste debe bajarse del camión
+//   (el flujo de UI elimina la fila al marcar no conforme).
+// - Por lo tanto, en producción, todos los postes registrados deberían tener
+//   los 5 puntos en true. Si alguno quedara en false, sería un caso excepcional
+//   que requiere explicación en observaciones.
+//
+// Esta inspección establece la cadena de responsabilidad: al confirmar el despacho,
+// el operador firma que revisó visualmente los 5 puntos en cada poste.
 export interface PosteDespachado {
-  tipo_poste: TipoPoste;
-  cantidad: number;
-  codigos_plaquita: string[];   // código individual de cada poste (plaquita física)
+  codigo_plaquita: string;          // código único físico — identidad del poste
+  tipo_poste: TipoPoste;            // dimensión y carga
+  fecha_fabricacion?: string;       // grabada en la plaquita; ISO date
+  // Trazabilidad inversa opcional. NO se pide al despachar (el despachador no
+  // necesariamente sabe de qué jornada vino cada poste). Si está, se puede
+  // reconstruir cruzando plaquita ↔ jornada en el futuro.
+  jornada_origen_id?: string;
+  // 5 puntos de inspección visual del despachador
+  insp_punto_verde: boolean;        // punto verde en la base — liberado por Calidad
+  insp_armadura_vista: boolean;     // sin armadura expuesta
+  insp_oxido: boolean;              // sin óxido en grado inaceptable
+  insp_fisuras_mayores: boolean;    // sin fisuras > 0,2 mm
+  insp_danos_golpes: boolean;       // sin daños por golpe ni desprendimientos
+  observaciones?: string;           // notas individuales si las hay
 }
 
-export interface DespachoJornada {
+// Etiquetas humanas de los 5 puntos de inspección visual.
+// Definido aquí (no en constants) para que no haya cualquier "magic string" a la hora de iterar.
+export const PUNTOS_INSPECCION_DESPACHO = [
+  { key: 'insp_punto_verde',     label: 'Punto verde en la base',            descripcion: 'Certifica liberación por Calidad' },
+  { key: 'insp_armadura_vista',  label: 'Sin armadura a la vista',           descripcion: 'No hay armadura expuesta' },
+  { key: 'insp_oxido',           label: 'Sin óxido',                         descripcion: 'No presenta óxido en grado inaceptable' },
+  { key: 'insp_fisuras_mayores', label: 'Sin fisuras mayores',               descripcion: 'No hay fisuras > 0,2 mm' },
+  { key: 'insp_danos_golpes',    label: 'Sin daños ni golpes',               descripcion: 'No hay golpes ni desprendimientos' },
+] as const;
+export type PuntoInspeccionKey = typeof PUNTOS_INSPECCION_DESPACHO[number]['key'];
+
+export interface Despacho {
   id: string;
-  jornada_id: string;
-  planta_id: string;
-  fecha_despacho: string;
+  planta_id: string;                // ancla principal (NO depende de jornada)
+  fecha_despacho: string;           // ISO date — cuándo salió el camión
   numero_guia: string;
   destinatario: string;
   transportista?: string;
   patente_camion?: string;
   nombre_chofer?: string;
+  // Lista plana de postes individuales: cada item es UN poste con su plaquita.
+  // En la práctica un camión lleva entre 4 y 30 postes mezclados.
   postes: PosteDespachado[];
-  fotos_carga_urls: string[];       // fotos tomadas al cargar — evidencia de salida
+  fotos_carga_urls: string[];       // fotos generales del camión cargado
   observaciones_despacho?: string;
   // Recepción en destino
   estado_recepcion: EstadoRecepcion;
   fecha_recepcion?: string;
   nombre_receptor?: string;
-  fotos_recepcion_urls: string[];   // fotos tomadas al descargar — evidencia de llegada
+  fotos_recepcion_urls: string[];
   observaciones_recepcion?: string;
-  danos_detectados?: string;        // descripción de daños si los hay
-  created_by: string;
-  created_at: string;
+  danos_detectados?: string;
+  created_by: string;               // usuario que registró el despacho
+  created_at: string;               // ISO timestamp
 }
 
 // =============================================

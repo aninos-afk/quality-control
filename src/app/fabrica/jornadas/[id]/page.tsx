@@ -17,7 +17,7 @@ interface Props {
 
 export default function JornadaDetallePage({ params }: Props) {
   const { id } = use(params);
-  const { getJornada, getVerificacionesByJornada, getDesmoldeByJornada, getProductoTerminadoByJornada, getNCByJornada, getDespachoByJornada, trabajadores, moldes, usuarios, updateJornada, addAuditLog } = useApp();
+  const { getJornada, getVerificacionesByJornada, getDesmoldeByJornada, getProductoTerminadoByJornada, getNCByJornada, getDespachosByJornadaOrigen, trabajadores, moldes, usuarios, updateJornada, addAuditLog } = useApp();
   const { user, can } = useAuth();
   const router = useRouter();
 
@@ -62,7 +62,9 @@ export default function JornadaDetallePage({ params }: Props) {
   const verificaciones = getVerificacionesByJornada(id);
   const desmolde = getDesmoldeByJornada(id);
   const productoTerminado = getProductoTerminadoByJornada(id);
-  const despacho = getDespachoByJornada(id);
+  // Trazabilidad inversa: despachos que contienen postes provenientes de esta jornada.
+  // El despacho es un módulo independiente (ver /fabrica/despachos) — esto solo informa.
+  const despachosRelacionados = getDespachosByJornadaOrigen(id);
   const ncs = getNCByJornada(id);
 
   const getStepStatus = (step: number) => {
@@ -71,7 +73,6 @@ export default function JornadaDetallePage({ params }: Props) {
       2: { done: verificaciones.length > 0, locked: false },
       3: { done: !!desmolde, locked: verificaciones.length === 0 },
       4: { done: !!productoTerminado, locked: !desmolde },
-      5: { done: !!despacho, locked: jornada.estado !== 'cerrada' && jornada.estado !== 'despachada' },
     };
     return estados[step] || { done: false, locked: true };
   };
@@ -108,17 +109,6 @@ export default function JornadaDetallePage({ params }: Props) {
   const ptCreatedBy = productoTerminado ? getUserLabel(productoTerminado.created_by) : null;
   const jrnCreatedBy = getUserLabel(jornada.created_by);
 
-  const despachoDesc = despacho
-    ? [
-        `Guía ${despacho.numero_guia}`,
-        despacho.destinatario,
-        despacho.postes.reduce((s, p) => s + p.cantidad, 0) + ' postes',
-        despacho.estado_recepcion === 'conforme' ? '✅ Recibido conforme'
-          : despacho.estado_recepcion === 'con_danos' ? '⚠️ Con daños en recepción'
-          : '⏳ Pendiente de recepción',
-      ].join(' · ')
-    : '';
-
   const steps = [
     { num: 1, label: 'Jornada', desc: `${jornada.temperatura}°C | ${jornada.humedad_relativa}% HR | Cemento: ${jornada.lote_cemento}`, href: null, createdBy: jrnCreatedBy },
     { num: 2, label: 'Verificación', desc: verificaciones.length > 0 ? verificaciones.map(v => {
@@ -131,7 +121,6 @@ export default function JornadaDetallePage({ params }: Props) {
     }).join(' | ') : '', href: `/fabrica/jornadas/${id}/verificacion`, createdBy: verCreatedBy },
     { num: 3, label: 'Desmolde', desc: desmolde ? `${desmolde.fecha} — ${desmolde.defectos_detectados ? 'Con defectos corregidos' : 'Sin defectos'}` : '', href: `/fabrica/jornadas/${id}/desmolde`, createdBy: desCreatedBy },
     { num: 4, label: 'Producto terminado', desc: ptDesc, href: `/fabrica/jornadas/${id}/terminado`, createdBy: ptCreatedBy },
-    { num: 5, label: 'Despacho', desc: despachoDesc, href: `/fabrica/jornadas/${id}/despacho`, createdBy: null },
   ];
 
   return (
@@ -308,6 +297,43 @@ export default function JornadaDetallePage({ params }: Props) {
                 </div>
               ))}
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Trazabilidad de despachos — solo lectura. El despacho es un módulo aparte. */}
+      {despachosRelacionados.length > 0 && (
+        <Card className="bg-card/50 border-border/50">
+          <CardHeader>
+            <CardTitle className="text-base">
+              🚚 Despachos con postes de esta jornada ({despachosRelacionados.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {despachosRelacionados.map(d => {
+              const postesDeEstaJornada = d.postes.filter(p => p.jornada_origen_id === id);
+              const iconoRec = d.estado_recepcion === 'conforme' ? '✅' : d.estado_recepcion === 'con_danos' ? '⚠️' : '⏳';
+              return (
+                <Link key={d.id} href={`/fabrica/despachos/${d.id}`}>
+                  <div className="p-3 rounded-lg bg-muted/20 hover:bg-muted/40 border border-border/30 transition-colors cursor-pointer">
+                    <div className="flex items-center justify-between gap-3 flex-wrap">
+                      <div className="min-w-0">
+                        <p className="text-sm font-mono font-semibold">{d.numero_guia}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {d.fecha_despacho} · {d.destinatario}
+                          {d.patente_camion ? ` · ${d.patente_camion}` : ''}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground/80 mt-0.5">
+                          {postesDeEstaJornada.length} poste{postesDeEstaJornada.length === 1 ? '' : 's'} de esta jornada
+                          {postesDeEstaJornada.length !== d.postes.length ? ` (${d.postes.length} en total)` : ''}
+                        </p>
+                      </div>
+                      <span className="text-xs shrink-0">{iconoRec}</span>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
           </CardContent>
         </Card>
       )}

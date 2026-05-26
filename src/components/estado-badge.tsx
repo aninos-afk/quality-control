@@ -13,7 +13,6 @@ const jornadaColors: Record<EstadoJornada, string> = {
   desmolde_registrado: 'bg-[oklch(0.7_0.15_30)]/15 text-[oklch(0.7_0.15_30)] border-[oklch(0.7_0.15_30)]/30',
   producto_terminado: 'bg-status-green/15 text-status-green border-status-green/30',
   cerrada: 'bg-muted text-muted-foreground border-muted',
-  despachada: 'bg-status-green/20 text-status-green border-status-green/40',
 };
 
 export function EstadoJornadaBadge({ estado }: EstadoBadgeProps) {
