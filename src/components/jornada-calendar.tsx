@@ -2,11 +2,15 @@
 
 import { useState, useMemo } from 'react';
 import { cn } from '@/lib/utils';
-import type { Jornada, EstadoJornada } from '@/lib/types';
+import type { Jornada, EstadoJornada, Despacho } from '@/lib/types';
 import { ESTADOS_JORNADA_LABELS } from '@/lib/constants';
 
 interface JornadaCalendarProps {
   jornadas: Jornada[];
+  // Despachos como actividad independiente en el calendario.
+  // Aparecen como un chip propio (azul/turquesa) — no anidados en la jornada.
+  despachos?: Despacho[];
+  onDespachoClick?: (despacho: Despacho) => void;
   usuarios?: { id: string; nombre: string; rol: string }[];
   onDayClick?: (jornada: Jornada) => void;
   canToggleVisibility?: boolean;
@@ -27,7 +31,6 @@ const estadoColors: Record<EstadoJornada, { bg: string; dot: string; border: str
   desmolde_registrado: { bg: 'bg-[oklch(0.7_0.15_30)]/15', dot: 'bg-[oklch(0.7_0.15_30)]', border: 'border-[oklch(0.7_0.15_30)]/30' },
   producto_terminado: { bg: 'bg-status-green/15', dot: 'bg-status-green', border: 'border-status-green/30' },
   cerrada: { bg: 'bg-status-green/20', dot: 'bg-status-green', border: 'border-status-green/40' },
-  despachada: { bg: 'bg-status-green/25', dot: 'bg-status-green', border: 'border-status-green/50' },
 };
 
 function getMonday(date: Date): Date {
@@ -38,7 +41,7 @@ function getMonday(date: Date): Date {
   return d;
 }
 
-export function JornadaCalendar({ jornadas, usuarios, onDayClick, canToggleVisibility, onToggleVisibility, jornadasConHallazgos }: JornadaCalendarProps) {
+export function JornadaCalendar({ jornadas, despachos = [], onDespachoClick, usuarios, onDayClick, canToggleVisibility, onToggleVisibility, jornadasConHallazgos }: JornadaCalendarProps) {
   const [year, setYear] = useState(new Date().getFullYear());
   const [month, setMonth] = useState(new Date().getMonth());
 
@@ -50,6 +53,15 @@ export function JornadaCalendar({ jornadas, usuarios, onDayClick, canToggleVisib
     });
     return map;
   }, [jornadas]);
+
+  const despachoMap = useMemo(() => {
+    const map = new Map<string, Despacho[]>();
+    despachos.forEach(d => {
+      const existing = map.get(d.fecha_despacho) || [];
+      map.set(d.fecha_despacho, [...existing, d]);
+    });
+    return map;
+  }, [despachos]);
 
   const calendarDays = useMemo(() => {
     const firstDay = new Date(year, month, 1);
@@ -113,9 +125,11 @@ export function JornadaCalendar({ jornadas, usuarios, onDayClick, canToggleVisib
           {calendarDays.map((day, idx) => {
             const dateStr = day.date.toISOString().slice(0, 10);
             const dayJornadas = jornadaMap.get(dateStr) || [];
+            const dayDespachos = despachoMap.get(dateStr) || [];
             const isToday = dateStr === today;
             const isWeekend = day.date.getDay() === 0 || day.date.getDay() === 6;
             const hasJornadas = dayJornadas.length > 0 && day.inMonth;
+            const hasDespachos = dayDespachos.length > 0 && day.inMonth;
             const hasHallazgo = dayJornadas.some(j => jornadasConHallazgos?.has(j.id));
 
             return (
@@ -179,6 +193,34 @@ export function JornadaCalendar({ jornadas, usuarios, onDayClick, canToggleVisib
                   </div>
                 )}
 
+                {/* Chips de despacho — actividad independiente del proceso productivo */}
+                {hasDespachos && (
+                  <div className="space-y-0.5 mt-0.5">
+                    {dayDespachos.slice(0, 2).map(d => (
+                      <div
+                        key={d.id}
+                        className="rounded-md px-1.5 py-0.5 border border-status-blue/40 bg-status-blue/15 cursor-pointer hover:opacity-75 transition-opacity"
+                        onClick={e => { e.stopPropagation(); onDespachoClick?.(d); }}
+                        title={`Despacho ${d.numero_guia} — ${d.destinatario}`}
+                      >
+                        <div className="flex items-center gap-1">
+                          <span className="text-[9px]">🚚</span>
+                          <span className="text-[10px] font-medium truncate flex-1">{d.numero_guia}</span>
+                          <span className="text-[9px] text-muted-foreground/70">{d.postes.length}</span>
+                        </div>
+                      </div>
+                    ))}
+                    {dayDespachos.length > 2 && (
+                      <div
+                        className="text-[9px] text-center text-muted-foreground/60 cursor-pointer hover:text-foreground/60 transition-colors"
+                        onClick={() => onDespachoClick?.(dayDespachos[2])}
+                      >
+                        +{dayDespachos.length - 2} despachos
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* Tooltip on hover — muestra el lote más urgente */}
                 {hoveredDay === dateStr && hasJornadas && (() => {
                   const jornada = dayJornadas.find(j => j.estado !== 'cerrada') || dayJornadas[0];
@@ -217,6 +259,12 @@ export function JornadaCalendar({ jornadas, usuarios, onDayClick, canToggleVisib
             <span className="text-muted-foreground">{ESTADOS_JORNADA_LABELS[estado]}</span>
           </div>
         ))}
+        {despachos.length > 0 && (
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-status-blue" />
+            <span className="text-muted-foreground">🚚 Despacho</span>
+          </div>
+        )}
       </div>
     </div>
   );

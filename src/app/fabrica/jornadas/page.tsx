@@ -32,8 +32,9 @@ function getDiasAgo(fecha: string): string {
 export default function JornadasPage() {
   const router = useRouter();
   const { planta, can } = useAuth();
-  const { getJornadasByPlanta, updateJornada, productoTerminado, usuarios } = useApp();
+  const { getJornadasByPlanta, getDespachosByPlanta, updateJornada, productoTerminado, usuarios } = useApp();
   const jornadas = getJornadasByPlanta(planta?.id || '').sort((a, b) => b.fecha.localeCompare(a.fecha));
+  const despachos = getDespachosByPlanta(planta?.id || '');
   const [view, setView] = useState<ViewMode>('calendario');
   const canToggleVis = can('toggle_visible_externo');
   const [bannerExpanded, setBannerExpanded] = useState(false);
@@ -179,6 +180,8 @@ export default function JornadasPage() {
       {view === 'calendario' ? (
         <JornadaCalendar
           jornadas={jornadas}
+          despachos={despachos}
+          onDespachoClick={(d) => router.push(`/fabrica/despachos/${d.id}`)}
           usuarios={usuarios}
           onDayClick={(jornada) => router.push(`/fabrica/jornadas/${jornada.id}`)}
           canToggleVisibility={canToggleVis}

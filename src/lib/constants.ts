@@ -1,4 +1,4 @@
-import type { TipoPoste, TipoDefecto, DisposicionPNC, MedidaProteccion, MetodoCurado, TipoCondicion, TipoMaterial } from './types';
+import type { TipoPoste, TipoDefecto, DisposicionPNC, MedidaProteccion, MetodoCurado, TipoCondicion, TipoMaterial, EstadoRecepcion } from './types';
 
 // =============================================
 // PUNTOS DE VERIFICACIÓN (Doc 03 §8.2)
@@ -103,7 +103,6 @@ export const ESTADOS_JORNADA_LABELS: Record<string, string> = {
   desmolde_registrado: 'Desmolde registrado',
   producto_terminado: 'Producto terminado',
   cerrada: 'Cerrada',
-  despachada: 'Despachada',
 };
 
 export const DESTINOS_LABELS: Record<string, string> = {
@@ -120,3 +119,13 @@ export const TIPOS_MATERIAL: { value: TipoMaterial; label: string; icon: string 
 ];
 
 export const RANGO_CONO_ABRAMS = { min: 10, max: 20, unidad: 'mm' } as const;
+
+// =============================================
+// DESPACHO
+// =============================================
+
+export const ESTADO_RECEPCION_LABELS: Record<EstadoRecepcion, { label: string; color: string; icon: string }> = {
+  pendiente: { label: 'Pendiente de recepción', color: 'text-status-amber', icon: '⏳' },
+  conforme:  { label: 'Recibido conforme',       color: 'text-status-green',  icon: '✅' },
+  con_danos: { label: 'Con daños en recepción',  color: 'text-status-red',    icon: '⚠️' },
+};

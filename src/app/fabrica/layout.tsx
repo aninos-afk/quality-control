@@ -8,6 +8,7 @@ import { useAuth } from '@/lib/auth';
 const NAV_FULL = [
   { href: '/fabrica', label: 'Inspecciones', icon: '📋' },
   { href: '/fabrica/jornadas', label: 'Plan de Inspección', icon: '📅' },
+  { href: '/fabrica/despachos', label: 'Despachos', icon: '🚚' },
   { href: '/fabrica/no-conformidades', label: 'No Conformidades', icon: '⚠️' },
   { href: '/fabrica/ensayos', label: 'Ensayos', icon: '🧪' },
   { href: '/fabrica/condiciones', label: 'Condiciones', icon: '✅' },
@@ -16,6 +17,7 @@ const NAV_FULL = [
 
 const NAV_PATIO = [
   { href: '/fabrica/jornadas', label: 'Registro Diario', icon: '📅' },
+  { href: '/fabrica/despachos', label: 'Despachos', icon: '🚚' },
   { href: '/fabrica', label: 'Inspecciones', icon: '📋' },
 ];
 
